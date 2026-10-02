@@ -1,0 +1,62 @@
+[versions]
+kotlin = "2.0.20"
+agp = "8.5.2"
+android-compileSdk = "34"
+android-minSdk = "26"
+ktor = "2.3.12"
+kotlinx-serialization = "1.7.1"
+kotlinx-coroutines = "1.8.1"
+koin = "4.0.0"
+skie = "0.10.13"
+kotlin-test = "2.0.20"
+ktlint-gradle = "12.1.1"
+compose-bom = "2024.09.02"
+activity-compose = "1.9.2"
+core-ktx = "1.13.1"
+lifecycle-runtime-ktx = "2.8.6"
+pluto = "3.0.0"
+
+[libraries]
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin-test" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle-runtime-ktx" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+# On-device debugging toolkit (network inspector + crash/ANR capture), debug builds only —
+# the `-no-op` variants are Pluto's own API-compatible stand-ins for release builds.
+pluto-core = { module = "com.androidpluto:pluto", version.ref = "pluto" }
+pluto-core-noop = { module = "com.androidpluto:pluto-no-op", version.ref = "pluto" }
+pluto-network = { module = "com.androidpluto.plugins:network", version.ref = "pluto" }
+pluto-network-noop = { module = "com.androidpluto.plugins:network-no-op", version.ref = "pluto" }
+pluto-exceptions = { module = "com.androidpluto.plugins:exceptions", version.ref = "pluto" }
+pluto-exceptions-noop = { module = "com.androidpluto.plugins:exceptions-no-op", version.ref = "pluto" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+skie = { id = "co.touchlab.skie", version.ref = "skie" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }

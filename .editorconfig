@@ -1,0 +1,23 @@
+root = true
+
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 140
+insert_final_newline = true
+
+# Jetpack Compose convention is PascalCase for @Composable functions — a
+# direct conflict with ktlint's default lowerCamelCase rule. This is
+# ktlint's own documented escape hatch for exactly that conflict, not a
+# blanket disable.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Formatting-preference rules (line-wrap style for signatures/arguments/
+# multiline expressions, exact indent width in wrapped calls) add churn
+# without catching a real bug, and several have internal dependencies on
+# each other that break if disabled piecemeal — so the whole standard
+# ruleset is off, with only the substantive checks re-enabled below.
+ktlint_standard = disabled
+ktlint_standard_no-unused-imports = enabled
+ktlint_standard_import-ordering = enabled
+ktlint_standard_no-empty-file = enabled
+ktlint_standard_no-semi = enabled

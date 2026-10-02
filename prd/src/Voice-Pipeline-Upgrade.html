@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Voice Pipeline Upgrade — State Machine, Provider Abstraction, Monitoring &amp; Noise Suppression</title>
+<style>
+  @page { margin: 22mm 20mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 13px;
+    line-height: 1.55;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 24px; font-weight: 700; margin: 0 0 6px; }
+  .meta { font-size: 12px; color: #333; margin-bottom: 14px; }
+  .meta b { color: #000; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 18px 0; }
+  h2 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; page-break-after: avoid; }
+  h3 { font-size: 14px; font-weight: 700; color: #444; margin: 18px 0 8px; page-break-after: avoid; }
+  p { margin: 8px 0; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: #f2f2f2;
+    color: #0a7a5a;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.45;
+    background: #f7f7f7;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    white-space: pre;
+    page-break-inside: avoid;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 12px;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f2f2f2; font-weight: 700; }
+  ol, ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #fff;
+  }
+  .tag.done { background: #1a7a3a; }
+  .tag.fixed { background: #b45309; }
+  .section-note { color: #555; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Voice Pipeline Upgrade</h1>
+<div class="meta">
+  <b>Versi:</b> 1.0 &middot; <b>Tanggal:</b> 13 Juli 2026 &middot; <b>Status:</b> Selesai &amp; Terverifikasi &middot;
+  <b>Tipe:</b> Peningkatan arsitektur (Backend + iOS, Android di luar scope)
+</div>
+<div class="meta">
+  Dokumen ini melengkapi <b>PRD &mdash; Voice Assistant Mobile App</b> (baseline VC-1..VC-6) dan
+  <b>Voice AI Assistant PRD</b> (spec generik yang dipakai sebagai checklist gap-analysis untuk upgrade ini).
+</div>
+<hr>
+
+<h2>1. Ringkasan</h2>
+<p>
+Voice pipeline Pip (Mode A: Gemini Live full-duplex; Mode B: VAD + STT + LLM + TTS custom dengan voice-cloning)
+sudah berjalan production sebelum upgrade ini, tapi diaudit ulang terhadap <i>Voice AI Assistant PRD</i> sebagai
+checklist arsitektur generik. Hasil audit: 4 gap nyata (state machine, provider abstraction, monitoring, noise
+suppression) plus satu item pembersihan (fitur greeting lama). Semua sudah diimplementasikan, diuji end-to-end
+dengan audio suara asli lewat kedua mode, dan diverifikasi bekerja.
+</p>
+
+<h2>2. Latar Belakang &amp; Gap Analysis</h2>
+<p>Audit terhadap 5 area PRD, dibanding kode yang sudah ada:</p>
+<table>
+  <tr><th>Area PRD</th><th>Sebelum upgrade</th><th>Status</th></tr>
+  <tr>
+    <td>Voice State Machine</td>
+    <td>Flag ad-hoc (<code>_listening</code>/<code>_speaking</code> di Mode B); Mode A tanpa state sama sekali.
+        Tidak ada yang dikirim ke client.</td>
+    <td><span class="tag done">DIBANGUN</span></td>
+  </tr>
+  <tr>
+    <td>Voice Provider abstraction</td>
+    <td><code>stt.py</code>/<code>tts.py</code> hardcode satu class (Whisper/XTTS), beda dengan pola
+        config-driven <code>app/llm/</code> untuk LLM.</td>
+    <td><span class="tag done">DIBANGUN</span></td>
+  </tr>
+  <tr>
+    <td>Monitoring</td>
+    <td><code>app/llm/health.py</code> sudah lacak provider health/fallback count, tapi tidak pernah
+        di-expose lewat endpoint apa pun. Latency per-turn cuma masuk log.</td>
+    <td><span class="tag done">DIBANGUN</span></td>
+  </tr>
+  <tr>
+    <td>Noise Suppression</td>
+    <td>Tidak ada tahap denoising sebelum VAD/STT sama sekali.</td>
+    <td><span class="tag fixed">DIBANGUN + BUG DITEMUKAN &amp; DIPERBAIKI</span></td>
+  </tr>
+  <tr>
+    <td>Fitur greeting lama</td>
+    <td>Audio sambutan pre-recorded (cached) diputar otomatis begitu WS connect.</td>
+    <td><span class="tag done">DIHAPUS</span></td>
+  </tr>
+</table>
+<p class="section-note">
+Echo cancellation <b>tidak</b> didobelkan di backend &mdash; itu sudah benar ditangani iOS lewat
+<code>AVAudioSession .voiceChat</code> mode (level OS, lebih tepat daripada software DSP di server).
+Android di luar scope karena tidak ada target Android di repo ini.
+</p>
+
+<h2>3. Diagram Arsitektur Pipeline</h2>
+<pre>
+Mic (iOS AVAudioEngine, PCM16 mono)
+  │  AVAudioSession .voiceChat  ← echo cancellation (device-level, tidak didobel di server)
+  ▼
+WebSocket  /ws/voice/{session_id}
+  │
+  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ websocket_voice.py  _client_frames()                            │
+│   → NoiseSuppressor.process()  ←  BARU, terpusat untuk Mode A/B │
+└─────────────────────────────────────────────────────────────────┘
+  │
+  ├── Mode A: GeminiLiveSession ────────────────────────────────┐
+  │     speaker-verification gate → Gemini Live API             │
+  │     (STT + LLM + TTS jadi satu, realtime, black-box)         │
+  │     VoiceStateMachine: idle → listening → thinking →         │
+  │                         speaking → idle  (+ interrupted,      │
+  │                         reconnecting saat drop/retry)         │
+  │                                                               │
+  └── Mode B: VoicePipelineSession ──────────────────────────────┤
+        VAD (Silero) / PTT  →  speaker-verification (voice lock) │
+          ▼                                                       │
+        STTProvider  ←── factory.get_stt_provider()  ←── BARU    │
+          ▼                                                       │
+        LLM Router (app/llm/router.py — task="voice",             │
+                     fallback chain, health-tracked)              │
+          ▼                                                       │
+        TTSProvider  ←── factory.get_tts_provider()  ←── BARU    │
+          ▼                                                       │
+        VoiceStateMachine: idle → listening → processing →        │
+                            thinking → speaking → idle            │
+                                                                   │
+        metrics.record_turn()  ←── BARU (stt/llm/tts/total ms)   │
+└──────────────────────────────────────────────────────────────────┘
+  │
+  ▼
+WebSocket → PCM16@24kHz audio + JSON events (transcript/reply/state/...)
+  │
+  ▼
+Speaker (iOS AVAudioPlayerNode)
+</pre>
+
+<h2>4. Voice State Machine</h2>
+<p>
+Modul baru <code class="mono">app/voice/state_machine.py</code>. State disatukan sebagai satu enum yang
+sama untuk kedua mode dan dikirim ke client lewat event WS baru:
+<code>{"event": "state", "state": "&lt;nama&gt;"}</code>.
+</p>
+<pre>
+IDLE ──(user mulai bicara)──► LISTENING
+LISTENING ──(turn selesai / VAD end / PTT release)──► PROCESSING   (Mode B saja — STT jalan)
+PROCESSING ──(STT selesai, teks kosong)──► IDLE
+PROCESSING ──(STT selesai, ada teks)──► THINKING   (LLM men-generate, belum ada audio)
+LISTENING ──(Mode A: output pertama dari Gemini)──► THINKING
+THINKING ──(audio pertama mulai diputar)──► SPEAKING
+SPEAKING ──(user bicara lagi / barge-in)──► INTERRUPTED ──► LISTENING
+*  ──(WS terputus)──► DISCONNECTED
+*  ──(error tak tertangani)──► ERROR
+Mode A saja: koneksi Gemini Live drop ──► RECONNECTING ──(sukses)──► IDLE
+</pre>
+<table>
+  <tr><th>State</th><th>Dipakai di</th><th>Arti</th></tr>
+  <tr><td><code>idle</code></td><td>A &amp; B</td><td>Tidak ada turn aktif, siap menerima ucapan baru.</td></tr>
+  <tr><td><code>listening</code></td><td>A &amp; B</td><td>Menangkap ucapan user.</td></tr>
+  <tr><td><code>processing</code></td><td>B</td><td>STT sedang jalan (Mode A tidak punya tahap ini terpisah — STT-nya inline di dalam API realtime Gemini).</td></tr>
+  <tr><td><code>thinking</code></td><td>A &amp; B</td><td>LLM men-generate balasan, belum ada audio keluar.</td></tr>
+  <tr><td><code>speaking</code></td><td>A &amp; B</td><td>Audio balasan sedang diputar.</td></tr>
+  <tr><td><code>interrupted</code></td><td>A &amp; B</td><td>User memotong (barge-in) saat asisten bicara — VC-2/VC-3.</td></tr>
+  <tr><td><code>paused</code></td><td>tersedia, belum ada trigger nyata</td><td>Slot untuk fitur pause eksplisit di masa depan.</td></tr>
+  <tr><td><code>disconnected</code> / <code>error</code></td><td>A &amp; B</td><td>Sesi berakhir tak normal.</td></tr>
+  <tr><td><code>reconnecting</code></td><td>A saja</td><td>Koneksi Gemini Live drop &amp; sedang reconnect otomatis (kuirk API preview, sudah ada sebelum upgrade ini — sekarang terlihat oleh client).</td></tr>
+</table>
+<p><b>iOS:</b> <code>VoiceSocketClient.ServerState</code> (baru) menerima event ini dan menjadi
+<i>satu-satunya sumber kebenaran</i> untuk <code>VoiceSessionView.avatarState</code> — menggantikan logika lama
+yang merekonstruksi state dari kombinasi <code>phase</code> + <code>voice.isSpeaking</code> +
+<code>isInterruptedPulse</code>. Sistem animasi 5-state (<code>PipAvatarViewModel</code>, breathing/glow) tidak
+diubah — hanya cara <i>memetakan ke</i> sistem itu yang berubah.</p>
+
+<h2>5. Voice Provider Abstraction</h2>
+<p>
+Paket baru <code class="mono">app/voice/providers/</code>, meniru pola <code>app/llm/config.py</code> +
+<code>router.py</code> yang sudah ada untuk LLM: registry berbasis dict (bukan if/else), provider dipilih
+lewat file konfigurasi.
+</p>
+<pre>
+app/voice/providers/
+  base.py          STTProvider / TTSProvider (Protocol)
+  whisper_stt.py    WhisperSTTProvider   → membungkus app/voice/stt.py (tidak ditulis ulang)
+  xtts_tts.py       XTTSProvider         → membungkus app/voice/tts.py (tidak ditulis ulang)
+  config.py         VoiceProviderConfig — baca config/voice_providers.yaml, fail-fast kalau rusak
+  factory.py        get_stt_provider() / get_tts_provider() — dict lookup, no if/else
+</pre>
+<p><code class="mono">config/voice_providers.yaml</code>:</p>
+<pre>
+stt:
+  default: whisper
+  providers:
+    whisper:
+      model_size: small
+
+tts:
+  default: xtts
+  providers:
+    xtts:
+      model_name: tts_models/multilingual/multi-dataset/xtts_v2
+</pre>
+<p>
+Hanya <code>whisper</code>/<code>xtts</code> yang jadi implementasi nyata saat ini — integrasi provider baru
+(OpenAI Realtime, ElevenLabs, Piper, Kokoro, dst. sesuai PRD) adalah kerja terpisah (butuh SDK/API masing-masing);
+fase ini baru membuat <i>pola</i>-nya siap dipasangi provider baru tanpa menyentuh
+<code>mode_b_pipeline.py</code> lagi — cukup tambah class + entry registry + blok config.
+Mode A (Gemini Live) tidak diikutkan ke abstraksi ini karena API-nya sudah menyatukan
+STT+LLM+TTS jadi satu — bukan sesuatu yang bisa dipecah ke slot STT/TTS terpisah.
+</p>
+
+<h2>6. Monitoring Endpoint</h2>
+<p><code class="mono">GET /api/voice/metrics</code> (baru) — menggabungkan dua sumber yang sebelumnya
+tidak pernah keluar dari log/kode:</p>
+<pre>
+{
+  "recent_turns": [
+    {
+      "turn_id": "1b0a2d57", "session_id": "...", "mode": "b",
+      "stt_ms": 2231.4, "llm_first_token_ms": 474.2,
+      "tts_first_chunk_ms": 16974.9, "total_ms": 19708.6,
+      "at": "2026-07-13T09:04:21Z"
+    }
+  ],
+  "llm_provider_health": { "gemini": "healthy", "groq": "healthy", ... },
+  "llm_fallback_events_today": 22
+}
+</pre>
+<p>
+<code>recent_turns</code> — ring buffer 50 turn terakhir (<code class="mono">app/voice/metrics.py</code>),
+diisi dari titik yang sama dengan log <code>LATENCY ...</code> yang sudah ada di
+<code>mode_b_pipeline.py</code>/<code>mode_a_gemini_live.py</code>. Mode A hanya punya satu angka
+(<code>total_ms</code> = silence-wait + generation) karena STT-nya tidak terpisah dari API realtime-nya.
+<code>llm_provider_health</code>/<code>llm_fallback_events_today</code> — data yang sudah dilacak
+<code>app/llm/health.py</code> sejak awal, sekarang baru pertama kali di-expose lewat endpoint.
+</p>
+
+<h2>7. Noise Suppression — Desain &amp; Bug yang Ditemukan</h2>
+<p>
+Modul baru <code class="mono">app/voice/noise_suppression.py</code>, dipasang <b>terpusat</b> di
+<code>websocket_voice.py</code>'s <code>_client_frames()</code> supaya Mode A dan B dapat efeknya tanpa
+duplikasi kode.
+</p>
+<h3>Bug yang ditemukan saat verifikasi</h3>
+<p>
+Implementasi pertama menjalankan <code>noisereduce.reduce_noise(stationary=True)</code> langsung per-chunk
+mic (~100ms). Saat diuji dengan audio suara asli lewat WebSocket penuh, hasilnya:
+</p>
+<table>
+  <tr><th>Kondisi</th><th>Transkrip Whisper</th></tr>
+  <tr>
+    <td>Tanpa noise suppression</td>
+    <td><i>"halo pip, halo kamu bisa dengan suara saya halo pip pip kamu dengan suara saya halo"</i></td>
+  </tr>
+  <tr>
+    <td>Dengan noise suppression per-chunk 100ms (implementasi pertama)</td>
+    <td><code>''</code> &mdash; <b>kosong total</b></td>
+  </tr>
+</table>
+<p>
+Spectral gating <code>stationary=True</code> butuh jendela cukup panjang untuk memperkirakan noise floor yang
+stabil — pada window 100ms yang isinya kebanyakan ucapan, algoritmanya salah menganggap sebagian besar sinyal
+sebagai "noise" dan menggatingnya habis. <b>Diperbaiki</b> dengan rolling buffer per-koneksi (~1 detik konteks,
+mengembalikan hanya bagian baru dari setiap panggilan) — hasil sama seperti tanpa denoising, dengan bug ini
+tidak lagi muncul:
+</p>
+<table>
+  <tr><th>Kondisi</th><th>Transkrip Whisper</th><th>Latensi rata-rata/chunk</th></tr>
+  <tr>
+    <td>Rolling window ~1s (implementasi final)</td>
+    <td><i>"halo pip, halo kamu bisa dengar suara saya halo pip pip, kamu dengar suara saya halo"</i></td>
+    <td>~5ms (maks ~10ms)</td>
+  </tr>
+</table>
+<p class="section-note">
+Ada kill-switch <code>voice_noise_suppression_enabled</code> (default <code>True</code>) di
+<code>app/config.py</code> kalau suatu saat perlu dimatikan tanpa ubah kode — budget latency PRD untuk
+streaming delay (&lt;100ms) cukup ketat.
+</p>
+
+<h2>8. Fitur Greeting Lama — Dihapus</h2>
+<p>
+<code>app/voice/greetings.py</code> dan <code>scripts/generate_greetings.py</code> dihapus, beserta cache audio
+2.4MB yang sudah tidak terpakai (<code>data/greetings/</code>). Blok pemutaran greeting di
+<code>websocket_voice.py</code> dihapus. Tidak ada perubahan di sisi iOS — client tidak punya logika khusus
+greeting, hanya merender event <code>reply</code>/audio apa pun yang datang.
+</p>
+
+<h2>9. Hasil Verifikasi End-to-End</h2>
+<p>
+Diuji dengan audio suara asli (bukan sintetis) dikirim lewat koneksi WebSocket nyata ke kedua mode:
+</p>
+<table>
+  <tr><th>Mode</th><th>Urutan state</th><th>Transkrip</th><th>Balasan LLM</th><th>Audio balasan</th></tr>
+  <tr>
+    <td>B (Whisper→LLM→XTTS)</td>
+    <td><code>listening → processing → thinking → speaking → idle</code></td>
+    <td>"halo pip, halo kamu bisa dengar suara saya halo, pip pip, kamu dengar suara saya halo"</td>
+    <td>"Gue denger suara lo, bro! Lagi apa sih sekarang? ..."</td>
+    <td>16 frame, 636KB PCM16</td>
+  </tr>
+  <tr>
+    <td>A (Gemini Live)</td>
+    <td><code>listening → thinking → speaking → idle</code></td>
+    <td>(transkrip Gemini sendiri, realtime)</td>
+    <td>"Halo Rakka! Bisa, dengar kok suaranya. Ada yang bisa kubantu?"</td>
+    <td>80 frame, 197KB PCM16</td>
+  </tr>
+</table>
+<p>Build iOS (<code>xcodebuild</code>) sukses setelah seluruh perubahan Swift (state consumption).</p>
+
+<h2>10. Referensi File</h2>
+<table>
+  <tr><th>File</th><th>Peran</th></tr>
+  <tr><td><code>backend/app/voice/state_machine.py</code></td><td>Baru — <code>VoiceState</code> enum + <code>VoiceStateMachine</code>.</td></tr>
+  <tr><td><code>backend/app/voice/mode_b_pipeline.py</code></td><td>Diubah — state machine, factory provider, metrics.</td></tr>
+  <tr><td><code>backend/app/voice/mode_a_gemini_live.py</code></td><td>Diubah — state machine, metrics.</td></tr>
+  <tr><td><code>backend/app/api/websocket_voice.py</code></td><td>Diubah — greeting dihapus, noise suppression terpusat.</td></tr>
+  <tr><td><code>backend/app/voice/providers/</code></td><td>Baru — base/whisper_stt/xtts_tts/config/factory.</td></tr>
+  <tr><td><code>backend/config/voice_providers.yaml</code></td><td>Baru — konfigurasi provider STT/TTS.</td></tr>
+  <tr><td><code>backend/app/voice/metrics.py</code></td><td>Baru — ring buffer turn latency.</td></tr>
+  <tr><td><code>backend/app/api/monitoring.py</code></td><td>Baru — <code>GET /api/voice/metrics</code>.</td></tr>
+  <tr><td><code>backend/app/voice/noise_suppression.py</code></td><td>Baru — <code>NoiseSuppressor</code> rolling-window.</td></tr>
+  <tr><td><code>backend/app/config.py</code></td><td>Diubah — flag <code>voice_noise_suppression_enabled</code>.</td></tr>
+  <tr><td><code>Pip/Core/Networking/VoiceSocketClient.swift</code></td><td>Diubah — <code>ServerState</code> enum + event baru.</td></tr>
+  <tr><td><code>Pip/Features/Main/VoiceSessionView.swift</code></td><td>Diubah — <code>avatarState</code> pakai <code>serverState</code>.</td></tr>
+  <tr><td><code>backend/app/voice/greetings.py</code>, <code>scripts/generate_greetings.py</code></td><td>Dihapus.</td></tr>
+</table>
+
+</body>
+</html>

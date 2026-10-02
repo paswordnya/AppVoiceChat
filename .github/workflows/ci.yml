@@ -1,0 +1,55 @@
+name: CI
+
+# PRD-KMP-Migration-v2.md §6 Phase 0: catch a Kotlin-side break before it
+# reaches Xcode, and an Xcode-integration break before it reaches either app.
+
+on:
+  pull_request:
+    paths:
+      - "shared/**"
+      - "androidApp/**"
+      - "PipSharedPackage/**"
+      - "iosApp/**"
+      - ".github/workflows/ci.yml"
+  push:
+    branches: [main]
+
+jobs:
+  shared-build-and-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: shared + androidApp build and test
+        run: ./gradlew :shared:build :androidApp:assembleDebug --stacktrace
+
+  ktlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: ktlint check
+        run: ./gradlew ktlintCheck --stacktrace
+
+  ios-build:
+    runs-on: macos-14
+    needs: shared-build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build PipShared.xcframework
+        run: ./gradlew :shared:assemblePipSharedDebugXCFramework --stacktrace
+      - name: xcodebuild
+        working-directory: iosApp
+        run: |
+          xcodebuild -project Pip.xcodeproj -scheme Pip \
+            -destination 'generic/platform=iOS Simulator' build

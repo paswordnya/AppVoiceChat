@@ -1,0 +1,1880 @@
+<title>PipVoice — KMP MVVM Prototype</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<style>
+  /* ============================================================
+     DESIGN TOKENS — Material 3 x Apple HIG hybrid
+     ============================================================ */
+  :root{
+    --primary:#5B5FEF;
+    --primary-dark:#4347C4;
+    --on-primary:#FFFFFF;
+    --primary-container:#E4E3FF;
+    --on-primary-container:#181A6B;
+    --secondary:#00BFA6;
+    --background:#FAFAFC;
+    --surface:#FFFFFF;
+    --surface-variant:#F1F0F8;
+    --surface-alt:#F5F5FA;
+    --outline:#E4E3EC;
+    --outline-strong:#C9C8D6;
+    --on-surface:#1B1B23;
+    --on-surface-variant:#6E6D7E;
+    --on-surface-faint:#9998A8;
+    --error:#BA1A1A;
+    --error-container:#FFDAD6;
+    --on-error-container:#7A0000;
+    --success:#1E8E5A;
+    --success-container:#D7F5E4;
+    --scrim:rgba(15,14,28,0.45);
+    --shadow-1:0 1px 2px rgba(20,18,48,0.06), 0 1px 3px rgba(20,18,48,0.08);
+    --shadow-2:0 4px 12px rgba(20,18,48,0.10);
+    --shadow-3:0 16px 40px rgba(20,18,48,0.22);
+    --radius-xs:8px;
+    --radius-sm:12px;
+    --radius-md:18px;
+    --radius-lg:26px;
+    --radius-full:999px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  :root[data-theme="dark"]{
+    --primary:#B4B6FF;
+    --primary-dark:#9799FF;
+    --on-primary:#1B1A6B;
+    --primary-container:#302F91;
+    --on-primary-container:#E4E3FF;
+    --secondary:#5CE0C6;
+    --background:#111018;
+    --surface:#1A1922;
+    --surface-variant:#242331;
+    --surface-alt:#201F2A;
+    --outline:#332F45;
+    --outline-strong:#4A4560;
+    --on-surface:#EDECF7;
+    --on-surface-variant:#B4B2C7;
+    --on-surface-faint:#7C7A93;
+    --error:#FFB4AB;
+    --error-container:#5C0A0A;
+    --on-error-container:#FFDAD6;
+    --success:#7FDCAF;
+    --success-container:#0E4A32;
+    --scrim:rgba(0,0,0,0.6);
+    --shadow-1:0 1px 2px rgba(0,0,0,0.35);
+    --shadow-2:0 4px 14px rgba(0,0,0,0.4);
+    --shadow-3:0 20px 46px rgba(0,0,0,0.55);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    background:
+      radial-gradient(circle at 20% 10%, #6D6FF4 0%, transparent 45%),
+      radial-gradient(circle at 85% 90%, #00BFA6 0%, transparent 40%),
+      #0F0E1A;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:32px 16px;
+    color:var(--on-surface);
+    overflow-x:hidden;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  input{font-family:inherit;}
+  ::selection{background:var(--primary); color:var(--on-primary);}
+
+  /* ============================================================
+     LAYOUT — phone shell + dev console
+     ============================================================ */
+  .app-wrap{display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; justify-content:center;}
+
+  .phone-shell{position:relative;}
+  .device{
+    width:390px; height:844px;
+    background:var(--background);
+    border-radius:52px;
+    border:10px solid #08070C;
+    box-shadow: var(--shadow-3), 0 0 0 1.5px rgba(255,255,255,0.06) inset;
+    position:relative;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .notch{
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:120px; height:28px; background:#08070C; border-radius:0 0 18px 18px; z-index:50;
+  }
+  .status-bar{
+    height:48px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:0 26px; font-size:15px; font-weight:600; color:var(--on-surface); position:relative; z-index:20;
+    background:transparent;
+  }
+  .status-icons{display:flex; align-items:center; gap:5px;}
+  .status-bar svg{display:block;}
+
+  .screen-stack{flex:1; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    background:var(--background);
+    transform:translateX(100%);
+    transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease;
+    opacity:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .screen.active{transform:translateX(0); opacity:1; pointer-events:auto; z-index:10;}
+  .screen.below{transform:translateX(-28%); opacity:.4; z-index:5;}
+  .screen.fade{transform:translateX(0);}
+  .screen-scroll{flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding-bottom:24px;}
+  .screen-scroll::-webkit-scrollbar{width:0;}
+
+  .tab-bar{
+    flex:0 0 auto; display:flex; align-items:stretch; justify-content:space-around;
+    padding:8px 8px calc(env(safe-area-inset-bottom,0px) + 6px);
+    background:var(--surface); border-top:1px solid var(--outline);
+    position:relative; z-index:30;
+  }
+  .tab-bar.hidden{display:none;}
+  .tab-btn{
+    background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:6px 18px 4px; border-radius:var(--radius-sm); color:var(--on-surface-faint);
+    font-size:11px; font-weight:600; transition:color .15s;
+  }
+  .tab-btn.active{color:var(--primary);}
+  .tab-btn svg{width:24px;height:24px;}
+
+  .home-indicator{
+    flex:0 0 auto; height:20px; display:flex; align-items:center; justify-content:center; background:var(--surface);
+  }
+  .home-indicator::after{content:""; width:120px; height:4px; border-radius:99px; background:var(--on-surface); opacity:.55;}
+
+  /* ============================================================
+     TOP APP BARS / SHARED CHROME
+     ============================================================ */
+  .appbar{
+    display:flex; align-items:center; gap:10px; padding:10px 18px 12px; flex:0 0 auto;
+  }
+  .appbar-title{font-size:22px; font-weight:800; letter-spacing:-.02em; flex:1;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:var(--radius-full); background:var(--surface-variant); border:none;
+    display:flex; align-items:center; justify-content:center; color:var(--on-surface); flex:0 0 auto;
+    transition:background .15s, transform .1s;
+  }
+  .icon-btn:active{transform:scale(.9);}
+  .icon-btn svg{width:19px;height:19px;}
+  .icon-btn.primary-tint{background:var(--primary-container); color:var(--on-primary-container);}
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
+  .btn{
+    border:none; border-radius:var(--radius-full); padding:13px 22px; font-weight:700; font-size:15px;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:transform .1s, opacity .15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--primary); color:var(--on-primary);}
+  .btn-tonal{background:var(--primary-container); color:var(--on-primary-container);}
+  .btn-outline{background:transparent; color:var(--on-surface); border:1.5px solid var(--outline-strong);}
+  .btn-text{background:transparent; color:var(--primary); padding:10px 12px;}
+  .btn-danger{background:var(--error); color:#fff;}
+  .btn-block{width:100%;}
+  .btn:disabled{opacity:.5; pointer-events:none;}
+
+  /* ============================================================
+     SPLASH
+     ============================================================ */
+  #screen-splash .splash-body{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    background:linear-gradient(160deg,var(--primary) 0%, #7A6BF0 55%, #00BFA6 130%);
+  }
+  .splash-logo{
+    width:96px; height:96px; border-radius:28px; background:rgba(255,255,255,.16); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-2);
+  }
+  .splash-logo svg{width:48px;height:48px; color:#fff;}
+  .splash-title{color:#fff; font-size:26px; font-weight:800; letter-spacing:-.02em;}
+  .splash-sub{color:rgba(255,255,255,.85); font-size:13px; font-weight:500;}
+  .splash-spinner{
+    width:26px; height:26px; border-radius:50%; border:3px solid rgba(255,255,255,.35); border-top-color:#fff;
+    animation:spin .8s linear infinite; margin-top:18px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ============================================================
+     ONBOARDING
+     ============================================================ */
+  #screen-onboarding .onb-body{flex:1; display:flex; flex-direction:column;}
+  .onb-pages{flex:1; position:relative; overflow:hidden;}
+  .onb-page{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px; text-align:center; opacity:0; transform:translateX(24px); transition:opacity .3s, transform .3s; pointer-events:none;
+  }
+  .onb-page.active{opacity:1; transform:translateX(0); pointer-events:auto;}
+  .onb-art{
+    width:180px; height:180px; border-radius:44px; margin-bottom:28px;
+    display:flex; align-items:center; justify-content:center; background:var(--primary-container);
+  }
+  .onb-art svg{width:84px;height:84px; color:var(--primary);}
+  .onb-h{font-size:21px; font-weight:800; margin-bottom:10px;}
+  .onb-p{font-size:14px; color:var(--on-surface-variant); line-height:1.5; max-width:280px;}
+  .onb-dots{display:flex; gap:6px; justify-content:center; padding:14px 0;}
+  .onb-dot{width:7px;height:7px;border-radius:50%; background:var(--outline-strong); transition:all .2s;}
+  .onb-dot.active{width:20px; background:var(--primary);}
+  .onb-footer{padding:8px 24px 22px; display:flex; flex-direction:column; gap:10px;}
+  .mic-permission-card{
+    margin:0 24px 14px; padding:14px; border-radius:var(--radius-md); background:var(--surface-variant);
+    display:flex; gap:12px; align-items:flex-start; font-size:12.5px; color:var(--on-surface-variant); line-height:1.4;
+  }
+  .mic-permission-card svg{width:20px;height:20px; color:var(--primary); flex:0 0 auto; margin-top:1px;}
+
+  /* ============================================================
+     HOME — conversation list
+     ============================================================ */
+  .search-field{
+    margin:2px 18px 10px; padding:11px 14px; border-radius:var(--radius-full); background:var(--surface-variant);
+    display:flex; align-items:center; gap:9px; color:var(--on-surface-faint); font-size:14px;
+  }
+  .search-field svg{width:18px;height:18px; flex:0 0 auto;}
+  .search-field span{opacity:.8;}
+  .filter-row{display:flex; gap:8px; padding:2px 18px 12px; overflow-x:auto;}
+  .filter-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; padding:8px 15px; border-radius:var(--radius-full); background:var(--surface-variant);
+    font-size:12.5px; font-weight:700; color:var(--on-surface-variant); border:1px solid transparent; white-space:nowrap;
+    transition:all .15s;
+  }
+  .chip.active{background:var(--primary); color:var(--on-primary);}
+
+  .list{padding:0 14px;}
+  .convo-item{
+    display:flex; gap:12px; padding:12px 10px; border-radius:var(--radius-md); align-items:flex-start;
+    position:relative; transition:background .15s;
+  }
+  .convo-item:active{background:var(--surface-variant);}
+  .convo-avatar{
+    width:46px;height:46px;border-radius:16px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    background:var(--primary-container); color:var(--on-primary-container);
+  }
+  .convo-avatar svg{width:20px;height:20px;}
+  .convo-body{flex:1; min-width:0;}
+  .convo-top{display:flex; align-items:center; gap:6px;}
+  .convo-title{font-size:14.5px; font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .convo-time{font-size:11px; color:var(--on-surface-faint); flex:0 0 auto;}
+  .convo-preview{font-size:12.5px; color:var(--on-surface-variant); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .convo-pin{color:var(--primary);}
+  .convo-more{width:30px;height:30px; flex:0 0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--on-surface-faint); background:none; border:none;}
+  .convo-more svg{width:17px;height:17px;}
+
+  .fab{
+    position:absolute; right:20px; bottom:20px; width:60px; height:60px; border-radius:24px;
+    background:var(--primary); color:var(--on-primary); border:none; box-shadow:var(--shadow-2);
+    display:flex; align-items:center; justify-content:center; z-index:25; transition:transform .12s;
+  }
+  .fab:active{transform:scale(.92);}
+  .fab svg{width:26px;height:26px;}
+
+  .refresh-spinner{
+    display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; transition:height .18s;
+    color:var(--primary);
+  }
+  .refresh-spinner.show{height:44px;}
+  .refresh-spinner svg{width:22px;height:22px; animation:spin .7s linear infinite;}
+
+  /* skeletons */
+  .skeleton{background:linear-gradient(90deg, var(--surface-variant) 25%, var(--outline) 37%, var(--surface-variant) 63%); background-size:400% 100%; animation:shimmer 1.3s ease infinite; border-radius:8px;}
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:0 0;}}
+  .sk-row{display:flex; gap:12px; padding:12px 10px; align-items:center;}
+  .sk-avatar{width:46px;height:46px;border-radius:16px;}
+  .sk-lines{flex:1; display:flex; flex-direction:column; gap:8px;}
+  .sk-line{height:11px; border-radius:6px;}
+
+  /* empty / error state */
+  .state-block{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 36px; gap:6px;}
+  .state-icon{width:76px;height:76px;border-radius:26px; background:var(--surface-variant); display:flex; align-items:center; justify-content:center; margin-bottom:10px; color:var(--on-surface-faint);}
+  .state-icon.err{background:var(--error-container); color:var(--error);}
+  .state-icon svg{width:34px;height:34px;}
+  .state-title{font-size:16px; font-weight:800;}
+  .state-sub{font-size:13px; color:var(--on-surface-variant); line-height:1.5; margin-bottom:8px;}
+
+  /* pagination footer */
+  .load-more-row{display:flex; align-items:center; justify-content:center; padding:16px; color:var(--on-surface-faint); font-size:12.5px; gap:8px;}
+  .load-more-row svg{width:16px;height:16px; animation:spin .7s linear infinite;}
+
+  /* ============================================================
+     CHAT SCREEN
+     ============================================================ */
+  .chat-appbar{display:flex; align-items:center; gap:10px; padding:10px 14px 10px; border-bottom:1px solid var(--outline); flex:0 0 auto;}
+  .chat-title-wrap{flex:1; min-width:0;}
+  .chat-title{font-size:15px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .chat-sub{font-size:11px; color:var(--success); display:flex; align-items:center; gap:4px; font-weight:600;}
+  .chat-sub .dot{width:6px;height:6px;border-radius:50%; background:var(--success);}
+
+  .msg-list{flex:1; overflow-y:auto; padding:14px 14px 6px; display:flex; flex-direction:column; gap:14px;}
+  .msg-row{display:flex; gap:8px; max-width:88%;}
+  .msg-row.user{align-self:flex-end; flex-direction:row-reverse;}
+  .msg-row.assistant{align-self:flex-start;}
+  .msg-avatar{width:26px;height:26px;border-radius:9px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:var(--primary-container); color:var(--on-primary-container); margin-top:2px;}
+  .msg-avatar svg{width:13px;height:13px;}
+  .msg-bubble{padding:11px 14px; border-radius:18px; font-size:14px; line-height:1.5;}
+  .msg-row.user .msg-bubble{background:var(--primary); color:var(--on-primary); border-bottom-right-radius:5px;}
+  .msg-row.assistant .msg-bubble{background:var(--surface-variant); color:var(--on-surface); border-bottom-left-radius:5px;}
+  .msg-meta{display:flex; align-items:center; gap:6px; margin-top:5px; font-size:10.5px; color:var(--on-surface-faint);}
+  .msg-row.user .msg-meta{justify-content:flex-end;}
+  .tts-btn{width:22px;height:22px; border-radius:50%; border:none; background:var(--surface); color:var(--primary); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-1);}
+  .tts-btn svg{width:11px;height:11px;}
+  .tts-btn.playing{background:var(--primary); color:#fff;}
+  .voice-note-bubble{display:flex; align-items:center; gap:8px; min-width:150px;}
+  .voice-note-bubble > svg{width:16px;height:16px; flex:0 0 auto;}
+  .voice-note-wave{display:flex; align-items:center; gap:2px; height:20px; flex:1;}
+  .voice-note-wave span{width:3px; border-radius:2px; background:currentColor; opacity:.55;}
+
+  .typing-row{align-self:flex-start; display:flex; gap:8px; align-items:center;}
+  .typing-bubble{background:var(--surface-variant); border-radius:18px; border-bottom-left-radius:5px; padding:13px 16px; display:flex; gap:4px;}
+  .typing-dot{width:6px;height:6px;border-radius:50%; background:var(--on-surface-faint); animation:bounce 1.2s infinite;}
+  .typing-dot:nth-child(2){animation-delay:.15s;} .typing-dot:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0); opacity:.5;} 30%{transform:translateY(-4px); opacity:1;}}
+
+  .chat-error-banner{margin:0 14px 10px; padding:11px 13px; border-radius:var(--radius-sm); background:var(--error-container); color:var(--on-error-container); font-size:12.5px; display:flex; align-items:center; gap:8px;}
+  .chat-error-banner svg{width:16px;height:16px; flex:0 0 auto;}
+  .chat-error-banner button{margin-left:auto; font-weight:800; background:none; border:none; color:var(--on-error-container); font-size:12px; text-decoration:underline;}
+
+  .composer{
+    flex:0 0 auto; display:flex; align-items:flex-end; gap:8px; padding:10px 12px; border-top:1px solid var(--outline);
+    background:var(--surface);
+  }
+  .composer-input{
+    flex:1; min-height:40px; max-height:100px; border-radius:22px; background:var(--surface-variant); border:none;
+    padding:10px 16px; font-size:14px; resize:none; color:var(--on-surface); outline:none; font-family:inherit;
+  }
+  .composer-input::placeholder{color:var(--on-surface-faint);}
+  .composer-btn{width:40px;height:40px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; flex:0 0 auto; transition:transform .1s;}
+  .composer-btn:active{transform:scale(.9);}
+  .composer-btn.mic{background:var(--primary-container); color:var(--on-primary-container);}
+  .composer-btn.send{background:var(--primary); color:var(--on-primary);}
+  .composer-btn svg{width:19px;height:19px;}
+
+  /* ============================================================
+     VOICE CAPTURE BOTTOM SHEET
+     ============================================================ */
+  .sheet-scrim{position:absolute; inset:0; background:var(--scrim); opacity:0; pointer-events:none; transition:opacity .25s; z-index:60;}
+  .sheet-scrim.show{opacity:1; pointer-events:auto;}
+  .bottom-sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--surface); border-radius:28px 28px 0 0;
+    box-shadow:var(--shadow-3); transform:translateY(100%); transition:transform .32s cubic-bezier(.32,.72,0,1);
+    z-index:65; padding:10px 22px calc(env(safe-area-inset-bottom,0px) + 26px); text-align:center;
+  }
+  .bottom-sheet.show{transform:translateY(0);}
+  .sheet-handle{width:36px;height:4px; border-radius:99px; background:var(--outline-strong); margin:6px auto 18px;}
+  .voice-state-label{font-size:15px; font-weight:800; margin-bottom:4px;}
+  .voice-state-sub{font-size:12.5px; color:var(--on-surface-variant); margin-bottom:22px; min-height:16px;}
+  .voice-visualizer{height:76px; display:flex; align-items:center; justify-content:center; gap:4px; margin-bottom:22px;}
+  .voice-bar{width:5px; border-radius:4px; background:var(--primary); transition:height .09s ease;}
+  .voice-transcript{
+    min-height:44px; font-size:14.5px; color:var(--on-surface); font-weight:600; margin-bottom:24px; padding:0 6px; line-height:1.4;
+  }
+  .voice-transcript.placeholder{color:var(--on-surface-faint); font-weight:500;}
+  .sheet-actions{display:flex; align-items:center; justify-content:center; gap:22px;}
+  .sheet-action-btn{
+    width:54px;height:54px;border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; transition:transform .1s;
+  }
+  .sheet-action-btn:active{transform:scale(.9);}
+  .sheet-action-btn.cancel{background:var(--surface-variant); color:var(--on-surface);}
+  .sheet-action-btn.stop{background:var(--error); color:#fff; width:66px; height:66px;}
+  .sheet-action-btn.confirm{background:var(--success); color:#fff;}
+  .sheet-action-btn svg{width:24px;height:24px;}
+
+  /* ============================================================
+     SEARCH SCREEN
+     ============================================================ */
+  .search-header{padding:10px 18px 8px; flex:0 0 auto;}
+  .search-input-row{
+    display:flex; align-items:center; gap:9px; background:var(--surface-variant); border-radius:var(--radius-full);
+    padding:10px 14px;
+  }
+  .search-input-row svg{width:18px;height:18px; color:var(--on-surface-faint); flex:0 0 auto;}
+  .search-input-row input{flex:1; border:none; background:none; outline:none; font-size:14px; color:var(--on-surface);}
+  .search-input-row input::placeholder{color:var(--on-surface-faint);}
+  .search-clear{color:var(--on-surface-faint); background:none; border:none; display:flex;}
+  .search-clear svg{width:16px;height:16px;}
+  .type-filter-row{display:flex; gap:8px; padding:10px 18px 4px;}
+
+  .recent-chip-wrap{padding:6px 18px; display:flex; flex-wrap:wrap; gap:8px;}
+  .recent-chip{padding:7px 13px; border-radius:var(--radius-full); background:var(--surface-variant); font-size:12px; font-weight:600; color:var(--on-surface-variant); display:flex; align-items:center; gap:6px;}
+  .recent-chip svg{width:12px;height:12px;}
+
+  .result-item{padding:12px 18px;}
+  .result-title{font-size:14px; font-weight:700; margin-bottom:3px;}
+  .result-snippet{font-size:12.5px; color:var(--on-surface-variant); line-height:1.4;}
+  .result-snippet mark{background:var(--primary-container); color:var(--on-primary-container); border-radius:3px; padding:0 2px;}
+  .result-meta{font-size:10.5px; color:var(--on-surface-faint); margin-top:4px; display:flex; align-items:center; gap:5px;}
+  .result-meta svg{width:12px;height:12px; flex:0 0 auto;}
+
+  /* ============================================================
+     PROFILE
+     ============================================================ */
+  .profile-card{margin:6px 18px 18px; padding:22px 18px; border-radius:var(--radius-lg); background:linear-gradient(135deg,var(--primary) 0%, #7A6BF0 100%); color:#fff; text-align:center;}
+  .profile-avatar{width:68px;height:68px;border-radius:24px; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:24px; font-weight:800;}
+  .profile-name{font-size:17px; font-weight:800;}
+  .profile-email{font-size:12px; opacity:.85; margin-top:2px;}
+  .profile-plan{display:inline-flex; align-items:center; gap:5px; margin-top:12px; background:rgba(255,255,255,.18); padding:5px 12px; border-radius:var(--radius-full); font-size:11.5px; font-weight:700;}
+  .profile-plan svg{width:13px;height:13px; flex:0 0 auto;}
+  .usage-card{margin:0 18px 18px; padding:16px 18px; border-radius:var(--radius-md); background:var(--surface-variant);}
+  .usage-top{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:8px;}
+  .usage-top span:last-child{color:var(--on-surface-variant); font-weight:600;}
+  .usage-bar{height:8px; border-radius:99px; background:var(--outline); overflow:hidden;}
+  .usage-bar-fill{height:100%; border-radius:99px; background:var(--primary); transition:width .5s ease;}
+
+  .menu-section{margin:0 18px 18px;}
+  .menu-section-title{font-size:11px; font-weight:800; color:var(--on-surface-faint); text-transform:uppercase; letter-spacing:.06em; margin:0 4px 8px;}
+  .menu-list{border-radius:var(--radius-md); background:var(--surface-variant); overflow:hidden;}
+  .menu-item{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid var(--outline); background:none; border-left:none; border-right:none; border-top:none; width:100%; text-align:left; color:var(--on-surface);}
+  .menu-item:last-child{border-bottom:none;}
+  .menu-item svg.leading{width:19px;height:19px; color:var(--on-surface-variant); flex:0 0 auto;}
+  .menu-item-label{flex:1; font-size:13.5px; font-weight:600;}
+  .menu-item-value{font-size:12.5px; color:var(--on-surface-faint); font-weight:600;}
+  .menu-item svg.trailing{width:16px;height:16px; color:var(--on-surface-faint);}
+  .menu-item.danger{color:var(--error);}
+  .menu-item.danger svg.leading{color:var(--error);}
+
+  /* ============================================================
+     SETTINGS
+     ============================================================ */
+  .voice-option{display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--radius-md); border:1.5px solid var(--outline); margin-bottom:10px;}
+  .voice-option.selected{border-color:var(--primary); background:var(--primary-container);}
+  .voice-swatch{width:40px;height:40px;border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#fff; flex:0 0 auto;}
+  .voice-option-body{flex:1;}
+  .voice-option-name{font-size:13.5px; font-weight:700;}
+  .voice-option-desc{font-size:11.5px; color:var(--on-surface-variant);}
+  .voice-option-radio{width:20px;height:20px; border-radius:50%; border:2px solid var(--outline-strong); flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
+  .voice-option.selected .voice-option-radio{border-color:var(--primary);}
+  .voice-option.selected .voice-option-radio::after{content:""; width:10px;height:10px;border-radius:50%; background:var(--primary);}
+  .play-sample-btn{width:30px;height:30px;border-radius:50%; background:var(--surface); border:none; display:flex; align-items:center; justify-content:center; color:var(--primary); flex:0 0 auto; box-shadow:var(--shadow-1);}
+  .play-sample-btn svg{width:13px;height:13px;}
+
+  .toggle-row{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid var(--outline);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row-body{flex:1;}
+  .toggle-row-title{font-size:13.5px; font-weight:700;}
+  .toggle-row-sub{font-size:11.5px; color:var(--on-surface-variant); margin-top:1px;}
+  .switch{width:44px; height:26px; border-radius:99px; background:var(--outline-strong); position:relative; flex:0 0 auto; border:none; transition:background .2s;}
+  .switch.on{background:var(--primary);}
+  .switch::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .2s; box-shadow:var(--shadow-1);}
+  .switch.on::after{transform:translateX(18px);}
+
+  .theme-row{display:flex; gap:8px; padding:4px 18px 18px;}
+  .theme-opt{flex:1; padding:12px 8px; border-radius:var(--radius-sm); border:1.5px solid var(--outline); text-align:center; font-size:12px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .theme-opt.selected{border-color:var(--primary); background:var(--primary-container); color:var(--on-primary-container);}
+  .theme-opt svg{width:18px;height:18px;}
+
+  /* ============================================================
+     DIALOG / SNACKBAR
+     ============================================================ */
+  .dialog-scrim{position:absolute; inset:0; background:var(--scrim); opacity:0; pointer-events:none; transition:opacity .2s; z-index:80; display:flex; align-items:center; justify-content:center;}
+  .dialog-scrim.show{opacity:1; pointer-events:auto;}
+  .dialog{
+    width:280px; background:var(--surface); border-radius:var(--radius-lg); padding:22px 20px 18px; box-shadow:var(--shadow-3);
+    transform:scale(.85); opacity:0; transition:transform .2s cubic-bezier(.32,.72,0,1), opacity .2s;
+  }
+  .dialog-scrim.show .dialog{transform:scale(1); opacity:1;}
+  .dialog-icon{width:46px;height:46px;border-radius:16px; background:var(--error-container); color:var(--error); display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .dialog-icon svg{width:22px;height:22px;}
+  .dialog-title{font-size:16px; font-weight:800; margin-bottom:6px;}
+  .dialog-msg{font-size:13px; color:var(--on-surface-variant); line-height:1.5; margin-bottom:20px;}
+  .dialog-actions{display:flex; gap:8px;}
+  .dialog-actions .btn{flex:1; padding:11px;}
+
+  .snackbar-host{position:absolute; left:14px; right:14px; bottom:86px; z-index:90; display:flex; justify-content:center; pointer-events:none;}
+  .snackbar{
+    max-width:100%; background:#2B2A38; color:#fff; padding:13px 10px 13px 16px; border-radius:14px; box-shadow:var(--shadow-2);
+    display:flex; align-items:center; gap:10px; font-size:12.5px; font-weight:600;
+    transform:translateY(20px); opacity:0; transition:transform .25s, opacity .25s; pointer-events:auto;
+  }
+  .snackbar.show{transform:translateY(0); opacity:1;}
+  .snackbar button{background:none; border:none; color:var(--secondary); font-weight:800; font-size:12px; white-space:nowrap;}
+
+  /* ============================================================
+     DEV / PROTOTYPE CONSOLE (outside phone — QA aid, not part of app)
+     ============================================================ */
+  .dev-console{
+    width:250px; background:#15141F; border-radius:20px; padding:16px; color:#EDECF7; font-size:12px;
+    box-shadow:var(--shadow-3); border:1px solid #2A2938; max-height:844px; overflow-y:auto;
+  }
+  .dev-console h3{font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:#8B89A8; margin:0 0 4px;}
+  .dev-console p.hint{color:#6D6B85; font-size:11px; line-height:1.5; margin:0 0 14px;}
+  .dev-group{margin-bottom:14px;}
+  .dev-group-title{font-size:11.5px; font-weight:800; margin-bottom:7px; color:#B4B2C7; display:flex; align-items:center; gap:6px;}
+  .dev-btn-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .dev-btn{
+    background:#252436; border:1px solid #363448; color:#C7C5DA; border-radius:8px; padding:6px 9px; font-size:10.5px; font-weight:700;
+    cursor:pointer; transition:all .12s;
+  }
+  .dev-btn:hover{background:#332F52; color:#fff; border-color:var(--primary);}
+  .dev-badge{display:inline-block; margin-top:10px; font-size:10px; color:#6D6B85; line-height:1.5;}
+
+  @media (max-width:820px){
+    .app-wrap{flex-direction:column-reverse; align-items:center;}
+    .dev-console{width:390px;}
+  }
+  @media (max-width:430px){
+    .device{width:100vw; max-width:390px; height:100vh; max-height:844px; border-radius:0; border-width:0;}
+  }
+</style>
+
+<div class="app-wrap">
+  <div class="phone-shell">
+    <div class="device" id="device">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <span id="clock">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 18 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="10" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.2" fill="currentColor"/><rect x="22" y="4" width="1.6" height="4" rx="0.8" fill="currentColor"/></svg>
+        </div>
+      </div>
+
+      <div class="screen-stack" id="screenStack">
+        <section class="screen" data-screen="splash" id="screen-splash"></section>
+        <section class="screen" data-screen="onboarding" id="screen-onboarding"></section>
+        <section class="screen" data-screen="home" id="screen-home"></section>
+        <section class="screen" data-screen="chat" id="screen-chat"></section>
+        <section class="screen" data-screen="search" id="screen-search"></section>
+        <section class="screen" data-screen="profile" id="screen-profile"></section>
+        <section class="screen" data-screen="settings" id="screen-settings"></section>
+      </div>
+
+      <nav class="tab-bar hidden" id="tabBar">
+        <button class="tab-btn" data-tab="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+          Home
+        </button>
+        <button class="tab-btn" data-tab="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          Search
+        </button>
+        <button class="tab-btn" data-tab="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.6-4 5-6 8-6s6.4 2 8 6"/></svg>
+          Profile
+        </button>
+      </nav>
+      <div class="home-indicator" id="homeIndicator" style="display:none;"></div>
+
+      <div class="sheet-scrim" id="sheetScrim"></div>
+      <div class="bottom-sheet" id="voiceSheet"></div>
+
+      <div class="dialog-scrim" id="dialogScrim">
+        <div class="dialog" id="dialogBox"></div>
+      </div>
+
+      <div class="snackbar-host"><div class="snackbar" id="snackbar"></div></div>
+    </div>
+  </div>
+
+  <div class="dev-console" id="devConsole">
+    <h3>Prototype Console</h3>
+    <p class="hint">Forces each Shared ViewModel's StateFlow into a given UI state — for reviewing loading / error / empty without waiting on randomized network simulation.</p>
+    <div id="devGroups"></div>
+    <div class="dev-badge">Simulates: shared/viewmodel StateFlow → ui (collectAsState / Swift bridge)</div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   ICONS — inline SVG helpers (shared across all screens)
+   ================================================================ */
+const ICONS = {
+  mic:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 19v3"/><path d="M8 22h8"/></svg>`,
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+  send:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`,
+  more:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>`,
+  pin:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a5 5 0 0 0-5 5c0 3.2 3.6 6.8 4.4 9.7a.7.7 0 0 0 1.2 0C13.4 13.8 17 10.2 17 7a5 5 0 0 0-5-5Z"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`,
+  close:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  chevRight:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
+  refresh:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>`,
+  bot:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.3" fill="currentColor" stroke="none"/></svg>`,
+  play:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7Z"/></svg>`,
+  pause:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`,
+  copy:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`,
+  stop:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
+  alert:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>`,
+  inbox:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.4 5.4 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.6A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.4Z"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.6-4 5-6 8-6s6.4 2 8 6"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg>`,
+  logout:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>`,
+  shield:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5Z"/></svg>`,
+  sun:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/></svg>`,
+  moon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>`,
+  phone:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>`,
+  globe:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>`,
+  history:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l4 2"/></svg>`,
+  star:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m12 2 3.1 6.6 7.2.9-5.3 5 1.5 7.1L12 18.3 5.5 21.6 7 14.5l-5.3-5 7.2-.9Z"/></svg>`,
+  crown:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5L3 8Zm2 13h14v2H5Z"/></svg>`,
+};
+const icon = n => ICONS[n] || "";
+
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+let __uid = 1000;
+const uid = () => (__uid++).toString(36);
+const delay = ms => new Promise(res => setTimeout(res, ms));
+function relTime(ts){
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000);
+  if (m < 1) return "now";
+  if (m < 60) return m+"m";
+  const h = Math.floor(m/60);
+  if (h < 24) return h+"h";
+  const d = Math.floor(h/24);
+  if (d < 7) return d+"d";
+  return new Date(ts).toLocaleDateString(undefined,{month:"short", day:"numeric"});
+}
+function initials(name){ return name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function highlight(text, q){
+  if(!q) return escapeHtml(text);
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return escapeHtml(text);
+  return escapeHtml(text.slice(0,idx)) + "<mark>" + escapeHtml(text.slice(idx,idx+q.length)) + "</mark>" + escapeHtml(text.slice(idx+q.length));
+}
+
+/* ================================================================
+   shared/model — Domain Models
+   ================================================================ */
+const VOICE_MODELS = [
+  {id:"aria",  name:"Aria",  desc:"Warm · Female · US English",  color:"#5B5FEF"},
+  {id:"nova",  name:"Nova",  desc:"Bright · Female · UK English", color:"#00BFA6"},
+  {id:"atlas", name:"Atlas", desc:"Deep · Male · US English",     color:"#E8632C"},
+  {id:"sage",  name:"Sage",  desc:"Calm · Neutral · AU English",  color:"#8A5CF6"},
+];
+const LANGUAGES = ["English (US)","English (UK)","Spanish","Japanese","French","German"];
+
+const CONVERSATION_SEEDS = [
+  ["Plan a weekend trip to Kyoto","Great choice! Kyoto in autumn has stunning maple foliage — I'd suggest Arashiyama, Fushimi Inari, and..."],
+  ["Explain how neural networks learn","At a high level, a neural network learns by adjusting internal weights to reduce the error between its predictions and..."],
+  ["Draft a follow-up email to Sarah","Here's a draft: Subject: Following up on our chat — Hi Sarah, it was great catching up yesterday..."],
+  ["Convert 2 cups to grams of flour","2 cups of all-purpose flour is approximately 240 grams, though it can vary slightly depending on how it's packed."],
+  ["Brainstorm birthday gift ideas for Dad","A few ideas based on someone who likes woodworking: a premium chisel set, a leather tool roll, or a..."],
+  ["Summarize today's top news","Here are today's top three stories: 1) Markets rallied on cooling inflation data, 2) A new satellite..."],
+  ["Practice Spanish conversation","¡Claro que sí! Empecemos con un saludo básico. Cuando alguien dice 'Hola, ¿cómo estás?' puedes responder..."],
+  ["Debug my Python recursion function","The issue is your base case never triggers because `n` is being reassigned inside the loop. Try this instead..."],
+  ["Set a reminder for the dentist","Done — I've set a reminder for your dentist appointment. Would you like me to notify you the day before too?"],
+  ["Compare iPhone vs Pixel cameras","Both are excellent, but they optimize differently: iPhone tends toward natural, true-to-life color while Pixel..."],
+  ["Write a haiku about autumn leaves","Crimson leaves drifting — / silence holds the turning year / breath of cold arrives."],
+  ["Explain stock market basics","At its core, a stock represents partial ownership in a company. When you buy shares, you're purchasing a small..."],
+  ["Translate good morning to Japanese","'Good morning' in Japanese is 'おはようございます' (Ohayō gozaimasu), the polite form used generally..."],
+  ["Recipe for chocolate chip cookies","Here's a reliable recipe: 2¼ cups flour, 1 tsp baking soda, 1 cup butter, ¾ cup sugar, ¾ cup brown sugar..."],
+  ["How does noise cancelling work","Active noise cancelling works by using microphones to detect incoming sound waves, then generating an inverse..."],
+  ["Give me a Monday motivation quote","'The secret of getting ahead is getting started.' — Mark Twain. Want a few more, or one tailored to a specific goal?"],
+];
+
+function buildConversations(){
+  const now = Date.now();
+  return CONVERSATION_SEEDS.map((seed, i) => ({
+    id: "c"+i,
+    title: seed[0],
+    preview: seed[1],
+    updatedAt: now - i*3600_000*7 - i*i*40000,
+    pinned: i === 0 || i === 3,
+    messageCount: 4 + (i % 5) * 2,
+    kind: i % 4 === 0 ? "voice" : "text",
+  })).sort((a,b)=> (b.pinned - a.pinned) || (b.updatedAt - a.updatedAt));
+}
+let ALL_CONVERSATIONS = buildConversations();
+
+function buildMessagesFor(conversation){
+  const base = conversation.updatedAt - 1000*60*6;
+  const msgs = [
+    {id:uid(), role:"user", text:conversation.title, ts:base, voice: conversation.kind==="voice", duration: 6},
+    {id:uid(), role:"assistant", text:conversation.preview, ts:base+40_000},
+  ];
+  const extras = [
+    ["Can you give me a bit more detail on that?", "Sure — here's a deeper breakdown with a couple of concrete examples so it's easier to apply right away."],
+    ["That's helpful, thanks.", "You're welcome! Let me know if you'd like me to go further, or turn this into a checklist you can act on."],
+  ];
+  let t = base + 90_000;
+  for(let i=0;i<(conversation.messageCount-2)/2 && i<extras.length;i++){
+    msgs.push({id:uid(), role:"user", text:extras[i][0], ts:t}); t+=30_000;
+    msgs.push({id:uid(), role:"assistant", text:extras[i][1], ts:t}); t+=45_000;
+  }
+  return msgs;
+}
+
+const USER_PROFILE = {
+  name:"Alex Rivera",
+  email:"alex.rivera@example.com",
+  plan:"Pro",
+  memberSince:"March 2025",
+  usage:{ minutesUsed:142, minutesLimit:300 },
+};
+
+/* ================================================================
+   Mini StateFlow — mirrors kotlinx.coroutines.flow.MutableStateFlow
+   ================================================================ */
+class StateFlow{
+  constructor(initial){ this._value = initial; this._subs = new Set(); }
+  get value(){ return this._value; }
+  update(patchFn){
+    this._value = typeof patchFn === "function" ? {...this._value, ...patchFn(this._value)} : {...this._value, ...patchFn};
+    this._emit();
+  }
+  set(v){ this._value = v; this._emit(); }
+  subscribe(fn){ this._subs.add(fn); fn(this._value); return () => this._subs.delete(fn); }
+  _emit(){ this._subs.forEach(fn => fn(this._value)); }
+}
+
+/* ================================================================
+   shared/repository — Repositories (simulate API + latency + failure)
+   ================================================================ */
+const NET = { failRate: 0.14, latency: [500, 1100] };
+let NET_FORCE_SUCCESS = false; // toggled by the Prototype Console to guarantee a "success" demo state
+function simulatedFetch(result, {failRate = NET.failRate, latency = NET.latency} = {}){
+  const ms = latency[0] + Math.random()*(latency[1]-latency[0]);
+  return delay(ms).then(() => {
+    if(!NET_FORCE_SUCCESS && Math.random() < failRate) throw new Error("Network unreachable");
+    return result;
+  });
+}
+
+const ConversationRepository = {
+  async getConversations({page, pageSize, query, filter}){
+    let items = ALL_CONVERSATIONS.slice();
+    if(filter === "pinned") items = items.filter(c=>c.pinned);
+    if(filter === "voice") items = items.filter(c=>c.kind==="voice");
+    if(query) items = items.filter(c => c.title.toLowerCase().includes(query.toLowerCase()));
+    const start = page*pageSize;
+    const slice = items.slice(start, start+pageSize);
+    return simulatedFetch({ items: slice, hasMore: start+pageSize < items.length, total: items.length });
+  },
+  async getMessages(conversationId){
+    const convo = ALL_CONVERSATIONS.find(c=>c.id===conversationId);
+    return simulatedFetch({ messages: buildMessagesFor(convo) }, {failRate:0.06});
+  },
+  async sendMessage(conversationId, text){
+    return simulatedFetch({
+      userMessage:{id:uid(), role:"user", text, ts:Date.now()},
+    }, {failRate:0.05, latency:[150,300]});
+  },
+  async getAiReply(conversationId, userText){
+    const replies = [
+      "Got it — here's what I found. Let me know if you'd like me to expand on any part of this.",
+      "Sure thing. Based on what you've told me, I'd recommend starting with the simplest approach first.",
+      "Here's a concise answer, plus a follow-up thought you might find useful.",
+      "That's a great question — the short version is yes, and here's why that matters in practice.",
+    ];
+    return simulatedFetch({
+      message:{id:uid(), role:"assistant", text:replies[Math.floor(Math.random()*replies.length)], ts:Date.now()}
+    }, {failRate:0.18, latency:[900,1800]});
+  },
+  async deleteConversation(id){
+    return simulatedFetch({ok:true}, {failRate:0.05, latency:[200,400]});
+  },
+  async searchAll(query, type){
+    await delay(260 + Math.random()*300);
+    if(Math.random() < 0.08) throw new Error("Search index unavailable");
+    if(!query) return [];
+    return ALL_CONVERSATIONS
+      .filter(c => (type==="all"||c.kind===type) && (c.title.toLowerCase().includes(query.toLowerCase()) || c.preview.toLowerCase().includes(query.toLowerCase())))
+      .map(c => ({ conversationId:c.id, title:c.title, snippet:c.preview, ts:c.updatedAt, kind:c.kind }));
+  }
+};
+
+const VoiceRepository = {
+  async transcribeStream(onPartial){
+    const phrases = ["Hey Pip,", "Hey Pip, what's", "Hey Pip, what's a good", "Hey Pip, what's a good recipe", "Hey Pip, what's a good recipe for", "Hey Pip, what's a good recipe for dinner tonight?"];
+    for(const p of phrases){ await delay(320); onPartial(p); }
+    return simulatedFetch({ transcript:"Hey Pip, what's a good recipe for dinner tonight?" }, {failRate:0.1, latency:[200,400]});
+  }
+};
+
+const SettingsRepository = {
+  _state:{ selectedVoiceId:"aria", language:"English (US)", theme:"light", autoPlayResponses:true, wakeWordEnabled:false, saveHistory:true },
+  async getSettings(){ return simulatedFetch({...this._state}, {failRate:0.04}); },
+  async updateSettings(patch){ this._state = {...this._state, ...patch}; return simulatedFetch({...this._state}, {failRate:0.04, latency:[150,350]}); }
+};
+
+const UserRepository = {
+  async getProfile(){ return simulatedFetch({...USER_PROFILE}, {failRate:0.05}); },
+  async logout(){ return simulatedFetch({ok:true}, {failRate:0.02, latency:[200,400]}); }
+};
+
+/* ================================================================
+   shared/usecase — Use Cases (thin orchestration over repositories)
+   ================================================================ */
+const GetConversationsUseCase = params => ConversationRepository.getConversations(params);
+const SearchConversationsUseCase = (q,type) => ConversationRepository.searchAll(q,type);
+const SendMessageUseCase = (id,text) => ConversationRepository.sendMessage(id,text);
+const GetAiReplyUseCase = (id,text) => ConversationRepository.getAiReply(id,text);
+const DeleteConversationUseCase = id => ConversationRepository.deleteConversation(id);
+const GetMessagesUseCase = id => ConversationRepository.getMessages(id);
+const TranscribeVoiceUseCase = onPartial => VoiceRepository.transcribeStream(onPartial);
+const GetSettingsUseCase = () => SettingsRepository.getSettings();
+const UpdateSettingsUseCase = patch => SettingsRepository.updateSettings(patch);
+const GetUserProfileUseCase = () => UserRepository.getProfile();
+const LogoutUseCase = () => UserRepository.logout();
+
+/* ================================================================
+   shared/viewmodel — ViewModels (expose StateFlow<UiState> + events)
+   ================================================================ */
+
+/* ---------- SplashViewModel ---------- */
+class SplashViewModelImpl{
+  constructor(){ this.state = new StateFlow({ status:"loading" }); }
+  async init(){
+    await delay(1400);
+    this.state.set({ status:"ready", firstLaunch: !localStorage.getItem("pip_onboarded") });
+  }
+}
+const SplashViewModel = new SplashViewModelImpl();
+
+/* ---------- OnboardingViewModel ---------- */
+class OnboardingViewModelImpl{
+  constructor(){
+    this.pages = [
+      {icon:"bot", title:"Meet Pip, your voice assistant", body:"Ask questions, get things done, and have natural conversations — all hands-free."},
+      {icon:"mic", title:"Just say what's on your mind", body:"Tap the mic or say a wake word. Pip listens, transcribes, and responds in real time."},
+      {icon:"shield", title:"Your voice, your control", body:"Review, replay, or delete any conversation. Voice data stays private and on your terms."},
+    ];
+    this.state = new StateFlow({ pageIndex:0, micPermission:"undetermined" });
+  }
+  onNext(){
+    if(this.state.value.pageIndex < this.pages.length-1) this.state.update({pageIndex:this.state.value.pageIndex+1});
+  }
+  onBack(){ if(this.state.value.pageIndex>0) this.state.update({pageIndex:this.state.value.pageIndex-1}); }
+  onDotTapped(i){ this.state.update({pageIndex:i}); }
+  async onRequestMicPermission(){
+    this.state.update({micPermission:"requesting"});
+    await delay(500);
+    this.state.update({micPermission:"granted"});
+  }
+  onGetStarted(){ localStorage.setItem("pip_onboarded","1"); Nav.replaceRoot("home"); }
+}
+const OnboardingViewModel = new OnboardingViewModelImpl();
+
+/* ---------- HomeViewModel ---------- */
+class HomeViewModelImpl{
+  constructor(){
+    this.pageSize = 6;
+    this.state = new StateFlow({
+      status:"loading",        // loading | success | error | empty
+      conversations:[],
+      filter:"all",             // all | pinned | voice
+      searchKeyword:"",
+      page:0,
+      hasMore:true,
+      isRefreshing:false,
+      isLoadingMore:false,
+      error:null,
+    });
+  }
+  async load(){
+    this.state.update({status:"loading", error:null});
+    try{
+      const res = await GetConversationsUseCase({page:0, pageSize:this.pageSize, query:this.state.value.searchKeyword, filter:this.state.value.filter});
+      this.state.update({ status: res.items.length? "success":"empty", conversations:res.items, page:0, hasMore:res.hasMore, error:null });
+    }catch(e){
+      this.state.update({ status:"error", error: e.message });
+    }
+  }
+  async refresh(){
+    this.state.update({isRefreshing:true});
+    try{
+      const res = await GetConversationsUseCase({page:0, pageSize:this.pageSize, query:this.state.value.searchKeyword, filter:this.state.value.filter});
+      this.state.update({ status: res.items.length? "success":"empty", conversations:res.items, page:0, hasMore:res.hasMore, isRefreshing:false, error:null });
+    }catch(e){
+      this.state.update({ isRefreshing:false });
+      UiEvents.snackbar("Couldn't refresh — check your connection", "Retry", () => this.refresh());
+    }
+  }
+  async loadMore(){
+    if(!this.state.value.hasMore || this.state.value.isLoadingMore || this.state.value.status!=="success") return;
+    this.state.update({isLoadingMore:true});
+    try{
+      const nextPage = this.state.value.page+1;
+      const res = await GetConversationsUseCase({page:nextPage, pageSize:this.pageSize, query:this.state.value.searchKeyword, filter:this.state.value.filter});
+      this.state.update(s => ({ conversations:[...s.conversations, ...res.items], page:nextPage, hasMore:res.hasMore, isLoadingMore:false }));
+    }catch(e){
+      this.state.update({isLoadingMore:false});
+      UiEvents.snackbar("Couldn't load more conversations", "Retry", () => this.loadMore());
+    }
+  }
+  onFilterSelected(filter){ this.state.update({filter}); this.load(); }
+  onSearchShortcutTapped(){ Nav.push("search"); }
+  async onConversationTapped(id){ Nav.push("chat", {conversationId:id}); }
+  async onDeleteConversation(id){
+    const removed = ALL_CONVERSATIONS.find(c=>c.id===id);
+    ALL_CONVERSATIONS = ALL_CONVERSATIONS.filter(c=>c.id!==id);
+    this.state.update(s=>({ conversations:s.conversations.filter(c=>c.id!==id) }));
+    try{ await DeleteConversationUseCase(id); }catch(e){}
+    UiEvents.snackbar("Conversation deleted", "Undo", () => {
+      ALL_CONVERSATIONS.push(removed);
+      ALL_CONVERSATIONS.sort((a,b)=> (b.pinned-a.pinned)||(b.updatedAt-a.updatedAt));
+      this.load();
+    });
+  }
+  onNewVoiceChat(){ VoiceCaptureViewModel.open({ mode:"new" }); }
+  onRetry(){ this.load(); }
+  _debugSetState(status){
+    if(status==="loading") this.state.update({status:"loading"});
+    if(status==="error") this.state.update({status:"error", error:"Simulated network failure"});
+    if(status==="empty") this.state.update({status:"empty", conversations:[]});
+    if(status==="success") this.load();
+  }
+}
+const HomeViewModel = new HomeViewModelImpl();
+
+/* ---------- ChatViewModel ---------- */
+class ChatViewModelImpl{
+  constructor(){
+    this.state = new StateFlow({
+      status:"loading",   // loading | success | error | empty
+      conversationId:null,
+      title:"",
+      messages:[],
+      isAiTyping:false,
+      inputText:"",
+      playingMessageId:null,
+      error:null,
+    });
+  }
+  async open(conversationId){
+    let convo = ALL_CONVERSATIONS.find(c=>c.id===conversationId);
+    let title = convo ? convo.title : "New conversation";
+    this.state.set({ status:"loading", conversationId, title, messages:[], isAiTyping:false, inputText:"", playingMessageId:null, error:null });
+    if(!convo){
+      this.state.update({status:"success", messages:[]});
+      return;
+    }
+    try{
+      const res = await GetMessagesUseCase(conversationId);
+      this.state.update({ status: res.messages.length? "success":"empty", messages:res.messages });
+    }catch(e){
+      this.state.update({ status:"error", error:e.message });
+    }
+  }
+  onInputChanged(v){ this.state.update({inputText:v}); }
+  async onSend(){
+    const text = this.state.value.inputText.trim();
+    if(!text) return;
+    this.state.update({inputText:""});
+    await this._sendText(text);
+  }
+  async _sendText(text){
+    const optimistic = {id:uid(), role:"user", text, ts:Date.now(), pending:true};
+    this.state.update(s=>({ messages:[...s.messages, optimistic], status:"success", error:null }));
+    try{
+      await SendMessageUseCase(this.state.value.conversationId, text);
+      this.state.update(s=>({ messages:s.messages.map(m=>m.id===optimistic.id?{...m,pending:false}:m) }));
+      this.state.update({isAiTyping:true});
+      const res = await GetAiReplyUseCase(this.state.value.conversationId, text);
+      this.state.update(s=>({ isAiTyping:false, messages:[...s.messages, res.message] }));
+    }catch(e){
+      this.state.update(s=>({ isAiTyping:false, error:"Pip couldn't respond. Check your connection and try again." }));
+    }
+  }
+  onDismissError(){ this.state.update({error:null}); }
+  onRetryLastMessage(){
+    const lastUser = [...this.state.value.messages].reverse().find(m=>m.role==="user");
+    this.state.update({error:null});
+    if(lastUser) this._sendPlainRetry(lastUser.text);
+  }
+  async _sendPlainRetry(text){
+    this.state.update({isAiTyping:true});
+    try{
+      const res = await GetAiReplyUseCase(this.state.value.conversationId, text);
+      this.state.update(s=>({ isAiTyping:false, messages:[...s.messages, res.message] }));
+    }catch(e){
+      this.state.update({ isAiTyping:false, error:"Pip couldn't respond. Check your connection and try again." });
+    }
+  }
+  onMicTapped(){ VoiceCaptureViewModel.open({ mode:"append" }); }
+  async onVoiceMessageReady(transcript){
+    await this._sendText(transcript);
+  }
+  onTogglePlayback(messageId){
+    const cur = this.state.value.playingMessageId;
+    if(cur === messageId){ this.state.update({playingMessageId:null}); return; }
+    this.state.update({playingMessageId:messageId});
+    delay(2600).then(()=>{ if(this.state.value.playingMessageId===messageId) this.state.update({playingMessageId:null}); });
+  }
+  onCopyMessage(text){ UiEvents.snackbar("Copied to clipboard"); }
+  onRetry(){ this.open(this.state.value.conversationId); }
+  _debugSetState(status){
+    if(status==="loading") this.state.update({status:"loading"});
+    if(status==="error") this.state.update({status:"error", error:"Simulated network failure"});
+    if(status==="empty") this.state.update({status:"empty", messages:[]});
+    if(status==="success") this.open(this.state.value.conversationId || "c0");
+  }
+}
+const ChatViewModel = new ChatViewModelImpl();
+
+/* ---------- VoiceCaptureViewModel (drives the voice bottom sheet) ---------- */
+class VoiceCaptureViewModelImpl{
+  constructor(){
+    this.state = new StateFlow({
+      isOpen:false,
+      phase:"listening",   // listening | processing | error
+      transcript:"",
+      elapsedSec:0,
+      amplitude: new Array(28).fill(4),
+      mode:"new",
+    });
+    this._timer = null; this._amp = null;
+  }
+  open({mode}){
+    this.state.set({ isOpen:true, phase:"listening", transcript:"", elapsedSec:0, amplitude:new Array(28).fill(4), mode });
+    this._runCapture();
+    this._amp = setInterval(()=>{
+      if(this.state.value.phase!=="listening") return;
+      const amp = this.state.value.amplitude.slice(1);
+      amp.push(6 + Math.random()*46);
+      this.state.update({amplitude:amp});
+    }, 90);
+    this._timer = setInterval(()=>{
+      if(this.state.value.phase==="listening") this.state.update(s=>({elapsedSec:s.elapsedSec+1}));
+    }, 1000);
+  }
+  async _runCapture(){
+    try{
+      const res = await TranscribeVoiceUseCase(partial => {
+        if(this.state.value.isOpen) this.state.update({transcript:partial});
+      });
+      if(this.state.value.isOpen) this.state.update({transcript:res.transcript});
+    }catch(e){
+      if(this.state.value.isOpen) this.state.update({phase:"error"});
+    }
+  }
+  onStop(){
+    this.state.update({phase:"processing"});
+    delay(500).then(()=>{
+      if(this.state.value.isOpen) this.onConfirm();
+    });
+  }
+  onCancel(){ this._teardown(); }
+  onConfirm(){
+    const transcript = this.state.value.transcript || "What's a good recipe for dinner tonight?";
+    const mode = this.state.value.mode;
+    this._teardown();
+    if(mode === "new"){
+      const convo = { id:"c"+Date.now(), title:transcript, preview:"", updatedAt:Date.now(), pinned:false, messageCount:0, kind:"voice" };
+      ALL_CONVERSATIONS.unshift(convo);
+      Nav.push("chat", {conversationId:convo.id, seedVoiceText:transcript});
+    } else {
+      ChatViewModel.onVoiceMessageReady(transcript);
+    }
+  }
+  onRetryCapture(){ this.state.update({phase:"listening", transcript:"", elapsedSec:0}); this._runCapture(); }
+  _teardown(){
+    clearInterval(this._timer); clearInterval(this._amp);
+    this.state.update({isOpen:false});
+  }
+}
+const VoiceCaptureViewModel = new VoiceCaptureViewModelImpl();
+
+/* ---------- SearchViewModel ---------- */
+class SearchViewModelImpl{
+  constructor(){
+    this.state = new StateFlow({
+      status:"idle",   // idle | loading | success | error | empty
+      query:"",
+      type:"all",       // all | text | voice
+      results:[],
+      recent:["neural networks","Kyoto trip","chocolate chip cookies"],
+      error:null,
+    });
+    this._debounceTimer = null;
+  }
+  onQueryChanged(q){
+    this.state.update({query:q});
+    clearTimeout(this._debounceTimer);
+    if(!q){ this.state.update({status:"idle", results:[]}); return; }
+    this._debounceTimer = setTimeout(()=> this._runSearch(), 320);
+  }
+  onTypeFilterChanged(type){ this.state.update({type}); if(this.state.value.query) this._runSearch(); }
+  onRecentTapped(term){ this.state.update({query:term}); this._runSearch(); }
+  onClear(){ this.state.update({query:"", status:"idle", results:[]}); }
+  async _runSearch(){
+    this.state.update({status:"loading", error:null});
+    try{
+      const results = await SearchConversationsUseCase(this.state.value.query, this.state.value.type);
+      this.state.update({ status: results.length? "success":"empty", results });
+      if(results.length){
+        this.state.update(s=>({ recent:[s.query, ...s.recent.filter(t=>t!==s.query)].slice(0,5) }));
+      }
+    }catch(e){
+      this.state.update({status:"error", error:e.message});
+    }
+  }
+  onResultTapped(conversationId){ Nav.push("chat", {conversationId}); }
+  onRetry(){ this._runSearch(); }
+  _debugSetState(status){
+    this.state.update({query: this.state.value.query || "example"});
+    if(status==="loading") this.state.update({status:"loading"});
+    if(status==="error") this.state.update({status:"error", error:"Simulated search failure"});
+    if(status==="empty") this.state.update({status:"empty", results:[]});
+    if(status==="success") this._runSearch();
+  }
+}
+const SearchViewModel = new SearchViewModelImpl();
+
+/* ---------- SettingsViewModel ---------- */
+class SettingsViewModelImpl{
+  constructor(){
+    this.state = new StateFlow({ status:"loading", settings:null, error:null, savingKey:null });
+  }
+  async load(){
+    this.state.update({status:"loading", error:null});
+    try{
+      const settings = await GetSettingsUseCase();
+      this.state.update({status:"success", settings});
+    }catch(e){
+      this.state.update({status:"error", error:e.message});
+    }
+  }
+  async _patch(patch, key){
+    const prev = this.state.value.settings;
+    this.state.update({ settings:{...prev, ...patch}, savingKey:key });
+    try{
+      const settings = await UpdateSettingsUseCase(patch);
+      this.state.update({settings, savingKey:null});
+    }catch(e){
+      this.state.update({ settings:prev, savingKey:null });
+      UiEvents.snackbar("Couldn't save setting — reverted");
+    }
+  }
+  onVoiceSelected(id){ this._patch({selectedVoiceId:id}, "voice"); }
+  onLanguageSelected(lang){ this._patch({language:lang}, "language"); UiEvents.closeDialog(); }
+  onThemeSelected(theme){ this._patch({theme}, "theme"); applyTheme(theme); }
+  onAutoPlayToggled(){ this._patch({autoPlayResponses: !this.state.value.settings.autoPlayResponses}, "autoplay"); }
+  onWakeWordToggled(){ this._patch({wakeWordEnabled: !this.state.value.settings.wakeWordEnabled}, "wakeword"); }
+  onSaveHistoryToggled(){ this._patch({saveHistory: !this.state.value.settings.saveHistory}, "history"); }
+  onPlaySample(voiceId){ UiEvents.snackbar("Playing "+VOICE_MODELS.find(v=>v.id===voiceId).name+" sample voice…"); }
+  onRetry(){ this.load(); }
+  _debugSetState(status){
+    if(status==="loading") this.state.update({status:"loading"});
+    if(status==="error") this.state.update({status:"error", error:"Simulated settings failure"});
+    if(status==="success") this.load();
+  }
+}
+const SettingsViewModel = new SettingsViewModelImpl();
+
+/* ---------- ProfileViewModel ---------- */
+class ProfileViewModelImpl{
+  constructor(){ this.state = new StateFlow({ status:"loading", profile:null, error:null }); }
+  async load(){
+    this.state.update({status:"loading", error:null});
+    try{
+      const profile = await GetUserProfileUseCase();
+      this.state.update({status:"success", profile});
+    }catch(e){
+      this.state.update({status:"error", error:e.message});
+    }
+  }
+  onSettingsTapped(){ Nav.push("settings"); }
+  onLogoutTapped(){
+    UiEvents.dialog({
+      icon:"logout", title:"Log out of PipVoice?", message:"You'll need to sign back in to access your conversation history.",
+      confirmLabel:"Log out", confirmStyle:"btn-danger", cancelLabel:"Cancel",
+      onConfirm: async () => { await LogoutUseCase(); UiEvents.closeDialog(); UiEvents.snackbar("Signed out successfully"); }
+    });
+  }
+  onRetry(){ this.load(); }
+  _debugSetState(status){
+    if(status==="loading") this.state.update({status:"loading"});
+    if(status==="error") this.state.update({status:"error", error:"Simulated profile failure"});
+    if(status==="success") this.load();
+  }
+}
+const ProfileViewModel = new ProfileViewModelImpl();
+
+/* ================================================================
+   UI-GLOBAL EVENTS — snackbar / dialog orchestration (cross-screen)
+   ================================================================ */
+const UiEvents = {
+  _snackTimer:null,
+  snackbar(message, actionLabel, actionFn){
+    const el = document.getElementById("snackbar");
+    clearTimeout(this._snackTimer);
+    el.innerHTML = `<span>${escapeHtml(message)}</span>` + (actionLabel ? `<button id="snackActionBtn">${escapeHtml(actionLabel)}</button>` : "");
+    el.classList.add("show");
+    if(actionLabel) document.getElementById("snackActionBtn").onclick = () => { actionFn && actionFn(); el.classList.remove("show"); };
+    this._snackTimer = setTimeout(()=> el.classList.remove("show"), 3600);
+  },
+  dialog({icon, title, message, confirmLabel, confirmStyle="btn-primary", cancelLabel, onConfirm}){
+    const scrim = document.getElementById("dialogScrim");
+    const box = document.getElementById("dialogBox");
+    box.innerHTML = `
+      ${icon?`<div class="dialog-icon">${ICONS[icon]}</div>`:""}
+      <div class="dialog-title">${escapeHtml(title)}</div>
+      <div class="dialog-msg">${escapeHtml(message)}</div>
+      <div class="dialog-actions">
+        ${cancelLabel?`<button class="btn btn-outline" id="dlgCancel">${escapeHtml(cancelLabel)}</button>`:""}
+        <button class="btn ${confirmStyle}" id="dlgConfirm">${escapeHtml(confirmLabel)}</button>
+      </div>`;
+    scrim.classList.add("show");
+    document.getElementById("dlgConfirm").onclick = () => onConfirm && onConfirm();
+    const cancelBtn = document.getElementById("dlgCancel");
+    if(cancelBtn) cancelBtn.onclick = () => this.closeDialog();
+  },
+  closeDialog(){ document.getElementById("dialogScrim").classList.remove("show"); }
+};
+
+/* ================================================================
+   NavController — screen stack + tab switching
+   ================================================================ */
+const Nav = {
+  stack:["splash"],
+  tabRoutes:["home","search","profile"],
+  params:{},
+  push(route, params={}){
+    this.params[route] = params;
+    this.stack.push(route);
+    this._render(true);
+    if(route==="chat") ChatViewModel.open(params.conversationId);
+    if(route==="settings") SettingsViewModel.load();
+  },
+  pop(){
+    if(this.stack.length<=1) return;
+    this.stack.pop();
+    this._render(false);
+  },
+  switchTab(route){
+    this.stack = [route];
+    this._render(false);
+    if(route==="home" && HomeViewModel.state.value.status==="loading" && HomeViewModel.state.value.conversations.length===0) HomeViewModel.load();
+    if(route==="profile") ProfileViewModel.load();
+  },
+  replaceRoot(route){
+    this.stack = [route];
+    this._render(false);
+    if(route==="home") HomeViewModel.load();
+  },
+  current(){ return this.stack[this.stack.length-1]; },
+  _render(isPush){
+    document.querySelectorAll(".screen").forEach(el => el.classList.remove("active","below"));
+    const cur = this.current();
+    const el = document.getElementById("screen-"+cur);
+    el.classList.add("active");
+    const tabBar = document.getElementById("tabBar");
+    const homeIndicator = document.getElementById("homeIndicator");
+    const showTabs = this.tabRoutes.includes(cur) && this.stack.length===1;
+    tabBar.classList.toggle("hidden", !showTabs);
+    homeIndicator.style.display = "flex";
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab===cur));
+    renderScreen(cur);
+  }
+};
+
+/* ================================================================
+   RENDER — ui layer. Each function "observes" a ViewModel's StateFlow
+   (mirrors collectAsState() on Android / Swift StateFlow bridge on iOS)
+   ================================================================ */
+function renderScreen(route){
+  ({
+    splash: renderSplash, onboarding: renderOnboarding, home: renderHome,
+    chat: renderChat, search: renderSearch, profile: renderProfile, settings: renderSettings,
+  }[route])();
+}
+
+/* ---------- Splash ---------- */
+function renderSplash(){
+  const el = document.getElementById("screen-splash");
+  el.innerHTML = `
+    <div class="splash-body">
+      <div class="splash-logo">${icon("bot")}</div>
+      <div class="splash-title">PipVoice</div>
+      <div class="splash-sub">Your voice, understood.</div>
+      <div class="splash-spinner"></div>
+    </div>`;
+}
+SplashViewModel.state.subscribe(s => {
+  if(Nav.current()!=="splash") return;
+  if(s.status==="ready"){
+    Nav.replaceRoot(s.firstLaunch ? "onboarding" : "home");
+  }
+});
+
+/* ---------- Onboarding ---------- */
+function renderOnboarding(){
+  const s = OnboardingViewModel.state.value;
+  const el = document.getElementById("screen-onboarding");
+  const isLast = s.pageIndex === OnboardingViewModel.pages.length-1;
+  el.innerHTML = `
+    <div class="onb-body">
+      <div class="onb-pages">
+        ${OnboardingViewModel.pages.map((p,i)=>`
+          <div class="onb-page ${i===s.pageIndex?'active':''}">
+            <div class="onb-art">${icon(p.icon)}</div>
+            <div class="onb-h">${p.title}</div>
+            <div class="onb-p">${p.body}</div>
+          </div>`).join("")}
+      </div>
+      <div class="onb-dots">
+        ${OnboardingViewModel.pages.map((_,i)=>`<button class="onb-dot ${i===s.pageIndex?'active':''}" data-dot="${i}"></button>`).join("")}
+      </div>
+      ${isLast ? `
+        <div class="mic-permission-card">
+          ${icon("mic")}
+          <div>PipVoice needs microphone access to hear your voice commands. ${s.micPermission==="granted"?"<strong>Access granted.</strong>":"You'll be asked to confirm next."}</div>
+        </div>` : ""}
+      <div class="onb-footer">
+        ${isLast
+          ? `<button class="btn btn-primary btn-block" id="onbGetStarted">${s.micPermission==="requesting"?"Requesting access…":"Get Started"}</button>`
+          : `<button class="btn btn-primary btn-block" id="onbNext">Continue</button>
+             <button class="btn btn-text" id="onbSkip">Skip</button>`
+        }
+      </div>
+    </div>`;
+  el.querySelectorAll("[data-dot]").forEach(b => b.onclick = () => OnboardingViewModel.onDotTapped(+b.dataset.dot));
+  const nextBtn = el.querySelector("#onbNext"); if(nextBtn) nextBtn.onclick = () => OnboardingViewModel.onNext();
+  const skipBtn = el.querySelector("#onbSkip"); if(skipBtn) skipBtn.onclick = () => OnboardingViewModel.onDotTapped(OnboardingViewModel.pages.length-1);
+  const goBtn = el.querySelector("#onbGetStarted");
+  if(goBtn) goBtn.onclick = async () => {
+    if(s.micPermission!=="granted"){ await OnboardingViewModel.onRequestMicPermission(); }
+    else OnboardingViewModel.onGetStarted();
+  };
+}
+OnboardingViewModel.state.subscribe(s => {
+  if(Nav.current()==="onboarding") renderOnboarding();
+  if(s.micPermission==="granted" && Nav.current()==="onboarding"){
+    setTimeout(()=>{ if(Nav.current()==="onboarding") OnboardingViewModel.onGetStarted(); }, 550);
+  }
+});
+
+/* ---------- Home ---------- */
+let homeScrollBound = false;
+function renderHome(){
+  const s = HomeViewModel.state.value;
+  const el = document.getElementById("screen-home");
+  const filters = [["all","All"],["pinned","Pinned"],["voice","Voice"]];
+
+  let body = "";
+  if(s.status==="loading"){
+    body = `<div class="list">` + Array.from({length:5}).map(()=>`
+      <div class="sk-row">
+        <div class="skeleton sk-avatar"></div>
+        <div class="sk-lines"><div class="skeleton sk-line" style="width:70%"></div><div class="skeleton sk-line" style="width:45%"></div></div>
+      </div>`).join("") + `</div>`;
+  } else if(s.status==="error"){
+    body = `<div class="state-block">
+      <div class="state-icon err">${icon("alert")}</div>
+      <div class="state-title">Couldn't load conversations</div>
+      <div class="state-sub">${escapeHtml(s.error || "Something went wrong.")}<br/>Check your connection and try again.</div>
+      <button class="btn btn-primary" id="homeRetry">Retry</button>
+    </div>`;
+  } else if(s.status==="empty"){
+    body = `<div class="state-block">
+      <div class="state-icon">${icon("inbox")}</div>
+      <div class="state-title">${s.searchKeyword || s.filter!=="all" ? "No matching conversations" : "No conversations yet"}</div>
+      <div class="state-sub">${s.searchKeyword || s.filter!=="all" ? "Try a different filter or search term." : "Tap the mic to start your first conversation with Pip."}</div>
+      ${s.searchKeyword||s.filter!=="all" ? `<button class="btn btn-outline" id="homeClearFilter">Clear filters</button>` : `<button class="btn btn-primary" id="homeEmptyNew">Start talking</button>`}
+    </div>`;
+  } else {
+    body = `
+      <div class="refresh-spinner ${s.isRefreshing?'show':''}">${icon("refresh")}</div>
+      <div class="list" id="convoList">
+        ${s.conversations.map(c => `
+          <div class="convo-item" data-id="${c.id}">
+            <div class="convo-avatar">${icon(c.kind==="voice"?"mic":"bot")}</div>
+            <div class="convo-body">
+              <div class="convo-top">
+                ${c.pinned?`<span class="convo-pin">${icon("pin")}</span>`:""}
+                <div class="convo-title">${escapeHtml(c.title)}</div>
+                <div class="convo-time">${relTime(c.updatedAt)}</div>
+              </div>
+              <div class="convo-preview">${escapeHtml(c.preview||"No messages yet")}</div>
+            </div>
+            <button class="convo-more" data-more="${c.id}">${icon("more")}</button>
+          </div>`).join("")}
+      </div>
+      ${s.isLoadingMore ? `<div class="load-more-row">${icon("refresh")} Loading more…</div>` : (!s.hasMore ? `<div class="load-more-row">— end of conversations —</div>` : "")}
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="appbar">
+      <div class="appbar-title">Conversations</div>
+      <button class="icon-btn" id="homeVoiceShortcut">${icon("mic")}</button>
+    </div>
+    <div class="search-field" id="homeSearchShortcut">${icon("search")}<span>Search conversations…</span></div>
+    <div class="filter-row">
+      ${filters.map(([k,label]) => `<button class="chip ${s.filter===k?'active':''}" data-filter="${k}">${label}</button>`).join("")}
+    </div>
+    <div class="screen-scroll" id="homeScroll">${body}</div>
+    <button class="fab" id="homeFab" aria-label="New voice chat">${icon("mic")}</button>
+  `;
+
+  el.querySelector("#homeVoiceShortcut").onclick = () => HomeViewModel.onNewVoiceChat();
+  el.querySelector("#homeFab").onclick = () => HomeViewModel.onNewVoiceChat();
+  el.querySelector("#homeSearchShortcut").onclick = () => HomeViewModel.onSearchShortcutTapped();
+  el.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => HomeViewModel.onFilterSelected(b.dataset.filter));
+  const retry = el.querySelector("#homeRetry"); if(retry) retry.onclick = () => HomeViewModel.onRetry();
+  const emptyNew = el.querySelector("#homeEmptyNew"); if(emptyNew) emptyNew.onclick = () => HomeViewModel.onNewVoiceChat();
+  const clearFilter = el.querySelector("#homeClearFilter"); if(clearFilter) clearFilter.onclick = () => { HomeViewModel.state.update({filter:"all", searchKeyword:""}); HomeViewModel.load(); };
+
+  el.querySelectorAll(".convo-item").forEach(row => {
+    row.addEventListener("click", (ev) => {
+      if(ev.target.closest("[data-more]")) return;
+      HomeViewModel.onConversationTapped(row.dataset.id);
+    });
+  });
+  el.querySelectorAll("[data-more]").forEach(btn => {
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      const id = btn.dataset.more;
+      const convo = HomeViewModel.state.value.conversations.find(c=>c.id===id);
+      UiEvents.dialog({
+        icon:"trash", title:"Delete conversation?", message:`"${convo.title}" will be permanently removed.`,
+        confirmLabel:"Delete", confirmStyle:"btn-danger", cancelLabel:"Cancel",
+        onConfirm:() => { UiEvents.closeDialog(); HomeViewModel.onDeleteConversation(id); }
+      });
+    };
+  });
+
+  // pull-to-refresh + infinite scroll
+  const scroll = el.querySelector("#homeScroll");
+  if(scroll){
+    let startY=null, pulling=false;
+    scroll.addEventListener("touchstart", e => { if(scroll.scrollTop<=0){ startY=e.touches[0].clientY; } }, {passive:true});
+    scroll.addEventListener("touchmove", e => {
+      if(startY==null) return;
+      const dy = e.touches[0].clientY - startY;
+      if(dy > 60 && !pulling){ pulling=true; }
+    }, {passive:true});
+    scroll.addEventListener("touchend", () => {
+      if(pulling && !HomeViewModel.state.value.isRefreshing) HomeViewModel.refresh();
+      startY=null; pulling=false;
+    });
+    scroll.addEventListener("scroll", () => {
+      if(scroll.scrollTop + scroll.clientHeight > scroll.scrollHeight - 80) HomeViewModel.loadMore();
+    });
+  }
+}
+HomeViewModel.state.subscribe(() => { if(Nav.current()==="home") renderHome(); });
+
+/* ---------- Chat ---------- */
+function renderChat(){
+  const s = ChatViewModel.state.value;
+  const el = document.getElementById("screen-chat");
+
+  let body = "";
+  if(s.status==="loading"){
+    body = `<div class="msg-list">` + Array.from({length:3}).map((_,i)=>`
+      <div class="msg-row ${i%2? 'assistant':'user'}"><div class="skeleton" style="width:${140+ (i*30)%90}px; height:40px; border-radius:18px;"></div></div>`).join("") + `</div>`;
+  } else if(s.status==="error"){
+    body = `<div class="state-block">
+      <div class="state-icon err">${icon("alert")}</div>
+      <div class="state-title">Couldn't load this conversation</div>
+      <div class="state-sub">${escapeHtml(s.error||"Something went wrong.")}</div>
+      <button class="btn btn-primary" id="chatRetry">Retry</button>
+    </div>`;
+  } else if(s.status==="empty"){
+    body = `<div class="state-block">
+      <div class="state-icon">${icon("bot")}</div>
+      <div class="state-title">Say hello to Pip</div>
+      <div class="state-sub">Type a message or tap the mic to start this conversation.</div>
+    </div>`;
+  } else {
+    body = `<div class="msg-list" id="msgList">
+      ${s.messages.map(m => `
+        <div class="msg-row ${m.role}">
+          ${m.role==="assistant" ? `<div class="msg-avatar">${icon("bot")}</div>` : ""}
+          <div>
+            <div class="msg-bubble" data-msgid="${m.id}">
+              ${m.voice ? `<div class="voice-note-bubble">${icon("mic")}<div class="voice-note-wave">${Array.from({length:14}).map(()=>`<span style="height:${6+Math.random()*14}px"></span>`).join("")}</div><span>${m.duration||6}s</span></div>` : escapeHtml(m.text)}
+            </div>
+            <div class="msg-meta">
+              ${m.pending ? "Sending…" : relTime(m.ts)}
+              ${m.role==="assistant" ? `<button class="tts-btn ${s.playingMessageId===m.id?'playing':''}" data-tts="${m.id}">${icon(s.playingMessageId===m.id?'pause':'play')}</button>` : ""}
+              ${m.role==="assistant" ? `<button class="tts-btn" data-copy="${m.id}">${icon("copy")}</button>` : ""}
+            </div>
+          </div>
+        </div>`).join("")}
+      ${s.isAiTyping ? `<div class="typing-row"><div class="msg-avatar">${icon("bot")}</div><div class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>` : ""}
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="chat-appbar">
+      <button class="icon-btn" id="chatBack">${icon("back")}</button>
+      <div class="chat-title-wrap">
+        <div class="chat-title">${escapeHtml(s.title || "Conversation")}</div>
+        <div class="chat-sub"><span class="dot"></span>Pip is online</div>
+      </div>
+      <button class="icon-btn" id="chatMore">${icon("more")}</button>
+    </div>
+    <div class="screen-scroll" style="flex:1; display:flex; flex-direction:column; padding-bottom:0;">${body}</div>
+    ${s.error ? `<div class="chat-error-banner">${icon("alert")}<span>${escapeHtml(s.error)}</span><button id="chatRetryMsg">Retry</button></div>` : ""}
+    ${s.status!=="loading" && s.status!=="error" ? `
+      <div class="composer">
+        <button class="composer-btn mic" id="chatMic">${icon("mic")}</button>
+        <textarea class="composer-input" id="chatInput" rows="1" placeholder="Message Pip…">${escapeHtml(s.inputText)}</textarea>
+        <button class="composer-btn send" id="chatSend">${icon("send")}</button>
+      </div>` : ""}
+  `;
+
+  el.querySelector("#chatBack").onclick = () => Nav.pop();
+  el.querySelector("#chatMore").onclick = () => UiEvents.snackbar("Conversation options coming soon");
+  const retry = el.querySelector("#chatRetry"); if(retry) retry.onclick = () => ChatViewModel.onRetry();
+  const retryMsg = el.querySelector("#chatRetryMsg"); if(retryMsg) retryMsg.onclick = () => ChatViewModel.onRetryLastMessage();
+  const input = el.querySelector("#chatInput");
+  if(input){
+    input.oninput = () => ChatViewModel.onInputChanged(input.value);
+    input.onkeydown = (e) => { if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); ChatViewModel.onSend(); } };
+  }
+  const sendBtn = el.querySelector("#chatSend"); if(sendBtn) sendBtn.onclick = () => ChatViewModel.onSend();
+  const micBtn = el.querySelector("#chatMic"); if(micBtn) micBtn.onclick = () => ChatViewModel.onMicTapped();
+  el.querySelectorAll("[data-tts]").forEach(b => b.onclick = () => ChatViewModel.onTogglePlayback(b.dataset.tts));
+  el.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+    const msg = s.messages.find(m=>m.id===b.dataset.copy);
+    ChatViewModel.onCopyMessage(msg.text);
+  });
+
+  const list = el.querySelector("#msgList");
+  if(list) list.scrollTop = list.scrollHeight;
+}
+ChatViewModel.state.subscribe(() => { if(Nav.current()==="chat") renderChat(); });
+
+/* ---------- Voice Capture Bottom Sheet ---------- */
+let __voiceSheetSig = null; // tracks isOpen+phase so rapid amplitude ticks don't rebuild button DOM under a user's tap
+function renderVoiceSheet(){
+  const s = VoiceCaptureViewModel.state.value;
+  const scrim = document.getElementById("sheetScrim");
+  const sheet = document.getElementById("voiceSheet");
+  scrim.classList.toggle("show", s.isOpen);
+  sheet.classList.toggle("show", s.isOpen);
+  if(!s.isOpen){ __voiceSheetSig = null; return; }
+
+  const sig = s.isOpen + "|" + s.phase;
+  if(sig !== __voiceSheetSig){
+    __voiceSheetSig = sig;
+    sheet.innerHTML = `
+      <div class="sheet-handle"></div>
+      <div class="voice-state-label"></div>
+      <div class="voice-state-sub"></div>
+      <div class="voice-visualizer">
+        ${s.phase==="listening"
+          ? s.amplitude.map(h => `<div class="voice-bar" style="height:${h}px"></div>`).join("")
+          : s.phase==="processing"
+            ? `<div class="splash-spinner" style="border-color:var(--outline); border-top-color:var(--primary);"></div>`
+            : `<div class="state-icon err" style="margin:0;">${icon("alert")}</div>`}
+      </div>
+      <div class="voice-transcript"></div>
+      <div class="sheet-actions">
+        ${s.phase==="listening" ? `
+          <button class="sheet-action-btn cancel" id="vcCancel">${icon("close")}</button>
+          <button class="sheet-action-btn stop" id="vcStop">${icon("stop")}</button>
+          <button class="sheet-action-btn confirm" id="vcConfirm">${icon("check")}</button>
+        ` : s.phase==="error" ? `
+          <button class="sheet-action-btn cancel" id="vcCancel">${icon("close")}</button>
+          <button class="sheet-action-btn stop" id="vcRetryCapture" style="background:var(--primary);">${icon("mic")}</button>
+        ` : ``}
+      </div>
+    `;
+    const cancel = sheet.querySelector("#vcCancel"); if(cancel) cancel.onclick = () => VoiceCaptureViewModel.onCancel();
+    const stop = sheet.querySelector("#vcStop"); if(stop) stop.onclick = () => VoiceCaptureViewModel.onStop();
+    const confirm = sheet.querySelector("#vcConfirm"); if(confirm) confirm.onclick = () => VoiceCaptureViewModel.onConfirm();
+    const retryCap = sheet.querySelector("#vcRetryCapture"); if(retryCap) retryCap.onclick = () => VoiceCaptureViewModel.onRetryCapture();
+  }
+
+  // cosmetic-only updates (waveform amplitude, timer, live transcript) — patched in place
+  // so the action buttons above stay stable DOM nodes across every ~90ms amplitude tick.
+  const label = s.phase==="listening" ? "Listening…" : s.phase==="processing" ? "Processing…" : "Couldn't hear that";
+  const sub = s.phase==="listening" ? `${String(Math.floor(s.elapsedSec/60)).padStart(2,'0')}:${String(s.elapsedSec%60).padStart(2,'0')}` : s.phase==="processing" ? "Sending to Pip" : "Check your microphone and try again";
+  sheet.querySelector(".voice-state-label").textContent = label;
+  sheet.querySelector(".voice-state-sub").textContent = sub;
+  const transcriptEl = sheet.querySelector(".voice-transcript");
+  transcriptEl.textContent = s.transcript ? s.transcript : "Say something like “what's the weather tomorrow?”";
+  transcriptEl.classList.toggle("placeholder", !s.transcript);
+  if(s.phase==="listening"){
+    const bars = sheet.querySelectorAll(".voice-bar");
+    bars.forEach((bar,i) => { if(s.amplitude[i]!=null) bar.style.height = s.amplitude[i]+"px"; });
+  }
+}
+VoiceCaptureViewModel.state.subscribe(renderVoiceSheet);
+document.getElementById("sheetScrim").onclick = () => { if(VoiceCaptureViewModel.state.value.phase!=="processing") VoiceCaptureViewModel.onCancel(); };
+
+/* ---------- Search ---------- */
+function renderSearch(){
+  const s = SearchViewModel.state.value;
+  const el = document.getElementById("screen-search");
+  const types = [["all","All"],["text","Text"],["voice","Voice"]];
+
+  let body = "";
+  if(s.status==="idle"){
+    body = `
+      <div style="padding:6px 18px;">
+        <div class="menu-section-title" style="margin-top:6px;">Recent searches</div>
+      </div>
+      <div class="recent-chip-wrap">
+        ${s.recent.map(r => `<button class="recent-chip" data-recent="${escapeHtml(r)}">${icon("history")}${escapeHtml(r)}</button>`).join("")}
+      </div>`;
+  } else if(s.status==="loading"){
+    body = `<div class="list">` + Array.from({length:4}).map(()=>`
+      <div style="padding:12px 18px;"><div class="skeleton sk-line" style="width:60%; margin-bottom:8px;"></div><div class="skeleton sk-line" style="width:85%;"></div></div>`).join("") + `</div>`;
+  } else if(s.status==="error"){
+    body = `<div class="state-block">
+      <div class="state-icon err">${icon("alert")}</div>
+      <div class="state-title">Search failed</div>
+      <div class="state-sub">${escapeHtml(s.error||"Something went wrong.")}</div>
+      <button class="btn btn-primary" id="searchRetry">Retry</button>
+    </div>`;
+  } else if(s.status==="empty"){
+    body = `<div class="state-block">
+      <div class="state-icon">${icon("search")}</div>
+      <div class="state-title">No results for “${escapeHtml(s.query)}”</div>
+      <div class="state-sub">Try a different keyword or clear filters.</div>
+    </div>`;
+  } else {
+    body = `<div>
+      ${s.results.map(r => `
+        <div class="result-item" data-result="${r.conversationId}">
+          <div class="result-title">${highlight(r.title, s.query)}</div>
+          <div class="result-snippet">${highlight(r.snippet, s.query)}</div>
+          <div class="result-meta">${icon(r.kind==="voice"?"mic":"bot")} ${relTime(r.ts)}</div>
+        </div>`).join("")}
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="search-header">
+      <div class="search-input-row">
+        ${icon("search")}
+        <input id="searchInput" placeholder="Search conversations, messages…" value="${escapeHtml(s.query)}" />
+        ${s.query ? `<button class="search-clear" id="searchClearBtn">${icon("close")}</button>` : ""}
+      </div>
+    </div>
+    <div class="type-filter-row">
+      ${types.map(([k,label]) => `<button class="chip ${s.type===k?'active':''}" data-type="${k}">${label}</button>`).join("")}
+    </div>
+    <div class="screen-scroll">${body}</div>
+  `;
+  const input = el.querySelector("#searchInput");
+  input.oninput = () => SearchViewModel.onQueryChanged(input.value);
+  setTimeout(()=> { if(document.activeElement!==input && s.query==="" && Nav.current()==="search") input.focus(); }, 50);
+  const clearBtn = el.querySelector("#searchClearBtn"); if(clearBtn) clearBtn.onclick = () => SearchViewModel.onClear();
+  el.querySelectorAll("[data-type]").forEach(b => b.onclick = () => SearchViewModel.onTypeFilterChanged(b.dataset.type));
+  el.querySelectorAll("[data-recent]").forEach(b => b.onclick = () => SearchViewModel.onRecentTapped(b.dataset.recent));
+  const retry = el.querySelector("#searchRetry"); if(retry) retry.onclick = () => SearchViewModel.onRetry();
+  el.querySelectorAll("[data-result]").forEach(r => r.onclick = () => SearchViewModel.onResultTapped(r.dataset.result));
+}
+SearchViewModel.state.subscribe(() => { if(Nav.current()==="search") renderSearch(); });
+
+/* ---------- Profile ---------- */
+function renderProfile(){
+  const s = ProfileViewModel.state.value;
+  const el = document.getElementById("screen-profile");
+
+  let body = "";
+  if(s.status==="loading"){
+    body = `
+      <div class="profile-card" style="background:var(--surface-variant);">
+        <div class="skeleton" style="width:68px;height:68px;border-radius:24px;margin:0 auto 12px;"></div>
+        <div class="skeleton sk-line" style="width:120px;height:14px;margin:0 auto 8px;"></div>
+        <div class="skeleton sk-line" style="width:160px;height:11px;margin:0 auto;"></div>
+      </div>`;
+  } else if(s.status==="error"){
+    body = `<div class="state-block">
+      <div class="state-icon err">${icon("alert")}</div>
+      <div class="state-title">Couldn't load profile</div>
+      <div class="state-sub">${escapeHtml(s.error||"Something went wrong.")}</div>
+      <button class="btn btn-primary" id="profileRetry">Retry</button>
+    </div>`;
+  } else {
+    const p = s.profile;
+    const pct = Math.round(p.usage.minutesUsed/p.usage.minutesLimit*100);
+    body = `
+      <div class="profile-card">
+        <div class="profile-avatar">${initials(p.name)}</div>
+        <div class="profile-name">${escapeHtml(p.name)}</div>
+        <div class="profile-email">${escapeHtml(p.email)}</div>
+        <div class="profile-plan">${icon("crown")} ${p.plan} Plan</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-top"><span>Voice minutes used</span><span>${p.usage.minutesUsed} / ${p.usage.minutesLimit} min</span></div>
+        <div class="usage-bar"><div class="usage-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="menu-section">
+        <div class="menu-section-title">Account</div>
+        <div class="menu-list">
+          <button class="menu-item" id="profileSettings"><svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.gear.match(/<path[^>]*>|<circle[^>]*>/g).join("")}</svg><span class="menu-item-label">Settings</span><svg class="trailing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button class="menu-item" id="profileNotif"><svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.bell.match(/<path[^>]*>/g).join("")}</svg><span class="menu-item-label">Notifications</span><span class="menu-item-value">On</span></button>
+          <button class="menu-item" id="profilePrivacy"><svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.shield.match(/<path[^>]*>/g).join("")}</svg><span class="menu-item-label">Privacy &amp; Data</span><svg class="trailing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="menu-list">
+          <button class="menu-item danger" id="profileLogout"><svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.logout.match(/<path[^>]*>/g).join("")}</svg><span class="menu-item-label">Log out</span></button>
+        </div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="appbar"><div class="appbar-title">Profile</div></div>
+    <div class="screen-scroll">${body}</div>
+  `;
+  const retry = el.querySelector("#profileRetry"); if(retry) retry.onclick = () => ProfileViewModel.onRetry();
+  const settingsBtn = el.querySelector("#profileSettings"); if(settingsBtn) settingsBtn.onclick = () => ProfileViewModel.onSettingsTapped();
+  const notif = el.querySelector("#profileNotif"); if(notif) notif.onclick = () => UiEvents.snackbar("Notification settings coming soon");
+  const priv = el.querySelector("#profilePrivacy"); if(priv) priv.onclick = () => UiEvents.snackbar("Privacy & data settings coming soon");
+  const logout = el.querySelector("#profileLogout"); if(logout) logout.onclick = () => ProfileViewModel.onLogoutTapped();
+}
+ProfileViewModel.state.subscribe(() => { if(Nav.current()==="profile") renderProfile(); });
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  const s = SettingsViewModel.state.value;
+  const el = document.getElementById("screen-settings");
+
+  let body = "";
+  if(s.status==="loading"){
+    body = `<div style="padding:16px 18px;">` + Array.from({length:4}).map(()=>`<div class="skeleton" style="height:58px;border-radius:14px;margin-bottom:10px;"></div>`).join("") + `</div>`;
+  } else if(s.status==="error"){
+    body = `<div class="state-block">
+      <div class="state-icon err">${icon("alert")}</div>
+      <div class="state-title">Couldn't load settings</div>
+      <div class="state-sub">${escapeHtml(s.error||"Something went wrong.")}</div>
+      <button class="btn btn-primary" id="settingsRetry">Retry</button>
+    </div>`;
+  } else {
+    const st = s.settings;
+    body = `
+      <div class="menu-section" style="margin-top:16px;">
+        <div class="menu-section-title">Assistant voice</div>
+        ${VOICE_MODELS.map(v => `
+          <div class="voice-option ${st.selectedVoiceId===v.id?'selected':''}" data-voice="${v.id}">
+            <div class="voice-swatch" style="background:${v.color}">${v.name[0]}</div>
+            <div class="voice-option-body"><div class="voice-option-name">${v.name}</div><div class="voice-option-desc">${v.desc}</div></div>
+            <button class="play-sample-btn" data-play="${v.id}">${icon("play")}</button>
+            <div class="voice-option-radio"></div>
+          </div>`).join("")}
+      </div>
+      <div class="menu-section">
+        <div class="menu-section-title">Preferences</div>
+        <div class="menu-list">
+          <button class="menu-item" id="settingsLanguage"><svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.globe.match(/<path[^>]*>|<circle[^>]*>/g).join("")}</svg><span class="menu-item-label">Language</span><span class="menu-item-value">${st.language}</span></button>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="menu-list">
+          <div class="toggle-row"><div class="toggle-row-body"><div class="toggle-row-title">Auto-play responses</div><div class="toggle-row-sub">Speak Pip's replies out loud automatically</div></div><button class="switch ${st.autoPlayResponses?'on':''}" id="toggleAutoplay"></button></div>
+          <div class="toggle-row"><div class="toggle-row-body"><div class="toggle-row-title">Wake word ("Hey Pip")</div><div class="toggle-row-sub">Start listening without tapping the mic</div></div><button class="switch ${st.wakeWordEnabled?'on':''}" id="toggleWakeword"></button></div>
+          <div class="toggle-row"><div class="toggle-row-body"><div class="toggle-row-title">Save conversation history</div><div class="toggle-row-sub">Keep past chats for search &amp; recall</div></div><button class="switch ${st.saveHistory?'on':''}" id="toggleHistory"></button></div>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="menu-section-title">Appearance</div>
+        <div class="theme-row">
+          <button class="theme-opt ${st.theme==='light'?'selected':''}" data-theme-opt="light">${icon("sun")}Light</button>
+          <button class="theme-opt ${st.theme==='dark'?'selected':''}" data-theme-opt="dark">${icon("moon")}Dark</button>
+          <button class="theme-opt ${st.theme==='system'?'selected':''}" data-theme-opt="system">${icon("phone")}System</button>
+        </div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="appbar">
+      <button class="icon-btn" id="settingsBack">${icon("back")}</button>
+      <div class="appbar-title">Settings</div>
+    </div>
+    <div class="screen-scroll">${body}</div>
+  `;
+  el.querySelector("#settingsBack").onclick = () => Nav.pop();
+  const retry = el.querySelector("#settingsRetry"); if(retry) retry.onclick = () => SettingsViewModel.onRetry();
+
+  el.querySelectorAll("[data-voice]").forEach(v => v.addEventListener("click", e => {
+    if(e.target.closest("[data-play]")) return;
+    SettingsViewModel.onVoiceSelected(v.dataset.voice);
+  }));
+  el.querySelectorAll("[data-play]").forEach(b => b.onclick = (e) => { e.stopPropagation(); SettingsViewModel.onPlaySample(b.dataset.play); });
+  const langBtn = el.querySelector("#settingsLanguage");
+  if(langBtn) langBtn.onclick = () => UiEvents.dialog({
+    title:"Choose language", message:"Select the language Pip should use for responses.",
+    confirmLabel:"Cancel", confirmStyle:"btn-outline", onConfirm: () => UiEvents.closeDialog(),
+  });
+  const autoplay = el.querySelector("#toggleAutoplay"); if(autoplay) autoplay.onclick = () => SettingsViewModel.onAutoPlayToggled();
+  const wake = el.querySelector("#toggleWakeword"); if(wake) wake.onclick = () => SettingsViewModel.onWakeWordToggled();
+  const hist = el.querySelector("#toggleHistory"); if(hist) hist.onclick = () => SettingsViewModel.onSaveHistoryToggled();
+  el.querySelectorAll("[data-theme-opt]").forEach(b => b.onclick = () => SettingsViewModel.onThemeSelected(b.dataset.themeOpt));
+}
+SettingsViewModel.state.subscribe(() => { if(Nav.current()==="settings") renderSettings(); });
+
+function applyTheme(theme){
+  const resolved = theme==="system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light") : theme;
+  document.documentElement.setAttribute("data-theme", resolved);
+}
+
+/* ================================================================
+   TAB BAR + BACK GESTURE
+   ================================================================ */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => Nav.switchTab(btn.dataset.tab);
+});
+document.getElementById("dialogScrim").addEventListener("click", (e) => { if(e.target.id==="dialogScrim") UiEvents.closeDialog(); });
+
+/* swipe-from-edge back gesture on the device */
+(function(){
+  let startX=null, startedAtEdge=false;
+  const device = document.getElementById("device");
+  device.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    startedAtEdge = startX < 24 && Nav.stack.length>1;
+  }, {passive:true});
+  device.addEventListener("touchend", e => {
+    if(startedAtEdge && e.changedTouches[0].clientX - startX > 60) Nav.pop();
+    startX=null; startedAtEdge=false;
+  });
+})();
+
+/* ================================================================
+   CLOCK
+   ================================================================ */
+function tickClock(){
+  const d = new Date();
+  document.getElementById("clock").textContent = d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+}
+tickClock(); setInterval(tickClock, 15000);
+
+/* ================================================================
+   DEV / PROTOTYPE CONSOLE
+   ================================================================ */
+const DEV_GROUPS = [
+  {label:"Home", vm:HomeViewModel, states:["loading","error","empty","success"]},
+  {label:"Chat", vm:ChatViewModel, states:["loading","error","empty","success"]},
+  {label:"Search", vm:SearchViewModel, states:["loading","error","empty","success"]},
+  {label:"Settings", vm:SettingsViewModel, states:["loading","error","success"]},
+  {label:"Profile", vm:ProfileViewModel, states:["loading","error","success"]},
+];
+document.getElementById("devGroups").innerHTML = DEV_GROUPS.map(g => `
+  <div class="dev-group">
+    <div class="dev-group-title">${g.label}ViewModel</div>
+    <div class="dev-btn-row">${g.states.map(st => `<button class="dev-btn" data-vm="${g.label}" data-state="${st}">${st}</button>`).join("")}</div>
+  </div>`).join("");
+document.querySelectorAll("[data-vm]").forEach(b => {
+  b.onclick = () => {
+    const group = DEV_GROUPS.find(g=>g.label===b.dataset.vm);
+    const routeMap = {Home:"home", Chat:"chat", Search:"search", Settings:"settings", Profile:"profile"};
+    const route = routeMap[b.dataset.vm];
+    NET_FORCE_SUCCESS = b.dataset.state === "success";
+    if(Nav.current()!==route){
+      if(route==="chat") Nav.push("chat", {conversationId:"c0"});
+      else if(route==="settings") Nav.push("settings");
+      else Nav.switchTab(route);
+    }
+    group.vm._debugSetState(b.dataset.state);
+    if(b.dataset.state === "success") setTimeout(() => { NET_FORCE_SUCCESS = false; }, 2000);
+  };
+});
+
+/* ================================================================
+   APP INIT
+   ================================================================ */
+applyTheme("light");
+renderSplash();
+document.getElementById("screen-splash").classList.add("active");
+SplashViewModel.init();
+</script>

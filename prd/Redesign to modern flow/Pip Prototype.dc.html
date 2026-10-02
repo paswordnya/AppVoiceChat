@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<template id="__bundler_thumbnail" data-bg-color="#F6F1EA">
+  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#F6F1EA"/>
+    <path d="M100 55 C120 55 140 65 140 90 C140 115 120 135 100 135 C80 135 60 115 60 90 C60 65 80 55 100 55 Z" fill="url(#g)"/>
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FF9466"/>
+        <stop offset="1" stop-color="#FF5F82"/>
+      </linearGradient>
+    </defs>
+    <path d="M78 100 a8 5 0 0 0 16 0" stroke="#2B2320" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M106 100 a8 5 0 0 0 16 0" stroke="#2B2320" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+</template>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; }
+    @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+    @keyframes listenPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.11); } }
+    @keyframes thinkPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(0.965); } }
+    @keyframes dotBounce { 0%,80%,100% { transform: translateY(0); opacity: .35; } 40% { transform: translateY(-7px); opacity: 1; } }
+    @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes backdropOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes popupSlideUp { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popupSlideDown { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(36px); } }
+    @keyframes voiceFadeIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes voiceFadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(28px); } }
+    @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+    @keyframes splashDotBounce { 0%,80%,100% { transform: scale(0.7); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
+  </style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+  <div style="{{ decoBlob1Style }}"></div>
+  <div style="{{ decoBlob2Style }}"></div>
+
+  <div style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; width:100%;">
+    <div style="font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.02em; color:rgba(43,35,32,0.5); text-transform:uppercase; margin-bottom:6px;">Pip — voice AI sidekick</div>
+    <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.42); margin-bottom:28px;">tap through the flow — onboarding, core loop, history &amp; settings</div>
+
+    <div style="display:flex; gap:8px; margin-bottom:32px; flex-wrap:wrap; justify-content:center;">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="4">
+        <button onClick="{{ item.onClick }}" style="{{ item.style }}">{{ item.label }}</button>
+      </sc-for>
+    </div>
+
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402,874">
+      <div style="{{ screenWrapStyle }}">
+
+        <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ skipSplash }}" style="{{ splashWrapStyle }}">
+            <sc-for list="{{ splashFloaters }}" as="fl" hint-placeholder-count="4">
+              <div style="{{ fl.style }}"></div>
+            </sc-for>
+
+            <div style="{{ splashBlobStyle }}">
+              <div style="{{ eyeLeftIdle }}"></div>
+              <div style="{{ eyeRightIdle }}"></div>
+              <div style="{{ mouthIdle }}"></div>
+            </div>
+            <div style="{{ splashWordmarkStyle }}">Pip</div>
+
+            <div style="{{ splashWelcomeStyle }}">Welcome! 👋</div>
+            <div style="{{ splashTaglineStyle }}">Your AI assistant is ready to help you chat, create, and get things done.</div>
+
+            <div style="{{ splashLoaderWrapStyle }}">
+              <div style="{{ splashDotsRowStyle }}">
+                <sc-for list="{{ splashDots }}" as="d" hint-placeholder-count="3">
+                  <div style="{{ d.style }}"></div>
+                </sc-for>
+              </div>
+              <div style="{{ splashLoadingMsgStyle }}">{{ splashMessage }}</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ authWrapStyle }}">
+            <div style="{{ authLogoStyle }}">
+              <div style="{{ eyeLeftIdle }}"></div>
+              <div style="{{ eyeRightIdle }}"></div>
+              <div style="{{ mouthIdle }}"></div>
+            </div>
+
+            <div style="{{ authHeadingStyle }}">{{ authHeading }}</div>
+            <div style="{{ authSubStyle }}">{{ authSubtext }}</div>
+
+            <button onClick="{{ googleSignIn }}" style="{{ socialBtnStyle }}">
+              <div style="{{ googleBadgeStyle }}">G</div>
+              <span>Continue with Google</span>
+            </button>
+            <button onClick="{{ appleSignIn }}" style="{{ socialBtnStyle }}">
+              <div style="{{ appleBadgeStyle }}">🍎</div>
+              <span>Continue with Apple</span>
+            </button>
+
+            <div style="{{ dividerRowStyle }}">
+              <div style="{{ dividerLineStyle }}"></div>
+              <div style="{{ dividerTextStyle }}">or</div>
+              <div style="{{ dividerLineStyle }}"></div>
+            </div>
+
+            <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">
+              <input type="email" value="{{ authEmail }}" onChange="{{ onAuthEmailChange }}" placeholder="Email address" style="{{ authInputStyle }}"/>
+              <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPasswordChange }}" placeholder="Password" style="{{ authInputStyle }}"/>
+              <div style="{{ forgotRowStyle }}">
+                <button style="{{ forgotLinkStyle }}">Forgot password?</button>
+              </div>
+              <button onClick="{{ submitAuth }}" style="{{ authPrimaryBtnStyle }}">
+                <sc-if value="{{ authLoading }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ authDotsRowStyle }}">
+                    <sc-for list="{{ authDots }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ authNotLoading }}" hint-placeholder-val="{{ true }}">
+                  <span>Sign In</span>
+                </sc-if>
+              </button>
+            </sc-if>
+
+            <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+              <input type="text" value="{{ authFullName }}" onChange="{{ onAuthFullNameChange }}" placeholder="Full name" style="{{ authInputStyle }}"/>
+              <input type="email" value="{{ authEmail }}" onChange="{{ onAuthEmailChange }}" placeholder="Email address" style="{{ authInputStyle }}"/>
+              <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPasswordChange }}" placeholder="Password" style="{{ authInputStyle }}"/>
+              <input type="password" value="{{ authConfirmPassword }}" onChange="{{ onAuthConfirmChange }}" placeholder="Confirm password" style="{{ authInputStyle }}"/>
+              <button onClick="{{ submitAuth }}" style="{{ authPrimaryBtnStyle }}">
+                <sc-if value="{{ authLoading }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ authDotsRowStyle }}">
+                    <sc-for list="{{ authDots }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ authNotLoading }}" hint-placeholder-val="{{ true }}">
+                  <span>Create Account</span>
+                </sc-if>
+              </button>
+            </sc-if>
+
+            <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ toRegister }}" style="{{ authToggleStyle }}">Don't have an account? <span style="{{ authToggleAccentStyle }}">Sign up</span></button>
+            </sc-if>
+            <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ toLogin }}" style="{{ authToggleStyle }}">Already have an account? <span style="{{ authToggleAccentStyle }}">Sign in</span></button>
+            </sc-if>
+
+            <button onClick="{{ continueAsGuest }}" style="{{ guestBtnStyle }}">Continue as Guest</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOnboard1 }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ onboardPadStyle }}">
+            <div style="display:flex; justify-content:flex-end;">
+              <button onClick="{{ skip }}" style="{{ skipBtnStyle }}">Skip</button>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; margin-top:-40px;">
+              <div style="{{ heroBlobStyle }}">
+                <div style="{{ eyeLeftIdle }}"></div>
+                <div style="{{ eyeRightIdle }}"></div>
+                <div style="{{ mouthIdle }}"></div>
+              </div>
+              <div style="text-align:center; padding:0 20px;">
+                <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:600; color:#2B2320; margin-bottom:10px;">Hi, I'm {{ buddy.name }}.</div>
+                <div style="font-family:Inter,sans-serif; font-size:15px; line-height:1.5; color:rgba(43,35,32,0.6);">Your calm little sidekick. Talk to me — I listen, think, and react.</div>
+              </div>
+            </div>
+            <button onClick="{{ toOnboard2 }}" style="{{ primaryBtnStyle }}">Continue with {{ buddy.name }}</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOnboard2 }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ onboardPadStyle }}">
+            <div style="display:flex; justify-content:flex-end;">
+              <button onClick="{{ skip }}" style="{{ skipBtnStyle }}">Skip</button>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; margin-top:-40px;">
+              <div style="{{ micIconWrapStyle }}">
+                <div style="{{ micIconStyle }}"></div>
+              </div>
+              <div style="text-align:center; padding:0 20px;">
+                <div style="font-family:'Fredoka',sans-serif; font-size:26px; font-weight:600; color:#2B2320; margin-bottom:10px;">{{ buddy.name }} needs your mic</div>
+                <div style="font-family:Inter,sans-serif; font-size:15px; line-height:1.5; color:rgba(43,35,32,0.6);">So you can just talk. Audio is never stored.</div>
+              </div>
+            </div>
+            <button onClick="{{ toOnboard3 }}" style="{{ primaryBtnStyle }}">Allow microphone</button>
+            <button onClick="{{ toOnboard3 }}" style="{{ linkBtnStyle }}">Not now</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOnboard3 }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ onboardPadStyle }}">
+            <div style="text-align:center; margin-bottom:6px;">
+              <div style="font-family:'Fredoka',sans-serif; font-size:26px; font-weight:600; color:#2B2320; margin-bottom:8px;">Choose your buddy</div>
+              <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.55);">You can change this any time.</div>
+            </div>
+            <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:16px; align-content:center; padding:8px 4px;">
+              <sc-for list="{{ buddies }}" as="b" hint-placeholder-count="4">
+                <div onClick="{{ b.onClick }}" style="{{ b.cardStyle }}">
+                  <div style="{{ b.blobStyle }}"></div>
+                  <div style="font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#2B2320;">{{ b.name }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <button onClick="{{ toHome }}" style="{{ primaryBtnStyle }}">Get started</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ homeWrapStyle }}">
+
+            <div style="{{ homeHeaderStyle }}">
+              <button onClick="{{ openHistory }}" style="{{ iconBtnStyle }}">☰</button>
+              <div onClick="{{ openPipPopup }}" style="{{ pipHeaderBtnStyle }}">
+                <div style="{{ pipHeaderDotStyle }}"></div>
+                <div style="text-align:center;">
+                  <div style="font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#2B2320;">{{ buddy.name }}</div>
+                  <div style="font-family:Inter,sans-serif; font-size:11px; color:rgba(43,35,32,0.45);">{{ phaseLabel }}</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <sc-if value="{{ isMicMode }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ openCategoryPopup }}" style="{{ iconBtnStyle }}">🗂️</button>
+                </sc-if>
+                <sc-if value="{{ isKeyboardMode }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ openKeyboardFullscreen }}" style="{{ iconBtnStyle }}">💬</button>
+                </sc-if>
+                <button onClick="{{ openProfile }}" style="{{ iconBtnStyle }}">👤</button>
+              </div>
+            </div>
+
+            <div style="{{ segmentRowStyle }}">
+              <div style="{{ segmentTrackStyle }}">
+                <button onClick="{{ setMicModeVoice }}" style="{{ segVoiceBtnStyle }}">Voice</button>
+                <button onClick="{{ setMicModeKeyboard }}" style="{{ segKeyboardBtnStyle }}">Keyboard</button>
+              </div>
+            </div>
+
+            <sc-if value="{{ isMicMode }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:0 24px;">
+
+                <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ userBubbleStyle }}">{{ activeQuestion }}</div>
+                </sc-if>
+
+                <sc-if value="{{ showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; gap:6px; height:14px;">
+                    <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div onClick="{{ tapBlob }}" style="{{ blobStyle }}">
+                  <div style="{{ eyeLeft }}"></div>
+                  <div style="{{ eyeRight }}"></div>
+                  <div style="{{ mouth }}"></div>
+                </div>
+
+                <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ pipBubbleStyle }}">{{ activeReply }}</div>
+                  <button onClick="{{ resetMic }}" style="{{ linkBtnStyle }}">ask a follow-up</button>
+                </sc-if>
+
+                <sc-if value="{{ isIdleOrListening }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.5);">{{ phaseHint }}</div>
+                </sc-if>
+
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isKeyboardMode }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:0 24px;">
+                <div onClick="{{ openKeyboardFullscreen }}" style="{{ typePromptStyle }}">
+                  <div style="{{ typePromptIconStyle }}">💬</div>
+                  <div style="{{ typePromptTextStyle }}">Tap to start chatting</div>
+                </div>
+                <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.5); text-align:center;">Type your message to begin the conversation.</div>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <sc-if value="{{ showPipOverlay }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closePipPopup }}" style="{{ pipBackdropStyle }}">
+              <div onClick="{{ stopPropagation }}" style="{{ pipCardStyle }}">
+                <div style="{{ popupHandleStyle }}"></div>
+                <button onClick="{{ closePipPopup }}" style="{{ popupCloseBtnStyle }}">✕</button>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:18px;">
+                  <div style="{{ settingsHeroBlobStyle }}">
+                    <div style="{{ eyeLeftIdle }}"></div>
+                    <div style="{{ eyeRightIdle }}"></div>
+                    <div style="{{ mouthIdle }}"></div>
+                  </div>
+                  <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#2B2320;">{{ buddy.name }}</div>
+                  <div style="font-family:Inter,sans-serif; font-size:13px; color:rgba(43,35,32,0.5);">{{ tagline }}</div>
+                </div>
+                <div style="{{ sectionLabelStyle }}">SWITCH BUDDY</div>
+                <div style="display:flex; gap:12px; margin-bottom:20px;">
+                  <sc-for list="{{ buddies }}" as="b" hint-placeholder-count="4">
+                    <div onClick="{{ b.popupSelect }}" style="{{ b.miniCardStyle }}">
+                      <div style="{{ b.miniBlobStyle }}"></div>
+                      <div style="font-family:Inter,sans-serif; font-size:11px; color:#2B2320; font-weight:500;">{{ b.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="{{ sectionLabelStyle }}">PERSONALITY</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <sc-for list="{{ personalities }}" as="p" hint-placeholder-count="4">
+                    <button onClick="{{ p.popupSelect }}" style="{{ p.style }}">{{ p.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showCategoryOverlay }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ closeCategoryPopup }}" style="{{ categoryBackdropStyle }}">
+              <div onClick="{{ stopPropagation }}" style="{{ categoryCardStyle }}">
+                <div style="{{ popupHandleStyle }}"></div>
+                <button onClick="{{ closeCategoryPopup }}" style="{{ popupCloseBtnStyle }}">✕</button>
+                <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#2B2320; margin-bottom:16px;">Choose a topic</div>
+                <div style="{{ categoryGridStyle }}">
+                  <sc-for list="{{ topics }}" as="t" hint-placeholder-count="12">
+                    <div onClick="{{ t.popupSelect }}" style="{{ t.gridCardStyle }}">
+                      <div style="{{ t.gridIconWrapStyle }}">{{ t.emoji }}</div>
+                      <div style="{{ t.gridLabelStyle }}">{{ t.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ voiceFullscreen }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ voiceOverlayStyle }}">
+              <div onTouchStart="{{ onVoiceDragStart }}" onTouchEnd="{{ onVoiceDragEnd }}" onMouseDown="{{ onVoiceDragStart }}" onMouseUp="{{ onVoiceDragEnd }}" style="{{ voiceDragHandleStyle }}"></div>
+              <button onClick="{{ endTalk }}" style="{{ voiceCloseBtnStyle }}">✕</button>
+              <div style="{{ voiceOverlayLabelStyle }}">
+                <div style="font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#2B2320;">{{ buddy.name }}</div>
+                <div style="font-family:Inter,sans-serif; font-size:12px; color:rgba(43,35,32,0.45);">{{ phaseLabel }}</div>
+              </div>
+
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:0 24px;">
+
+                <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ userBubbleStyle }}">{{ activeQuestion }}</div>
+                </sc-if>
+
+                <sc-if value="{{ showDots }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; gap:6px; height:14px;">
+                    <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div onClick="{{ tapBlob }}" style="{{ blobStyle }}">
+                  <div style="{{ eyeLeft }}"></div>
+                  <div style="{{ eyeRight }}"></div>
+                  <div style="{{ mouth }}"></div>
+                </div>
+
+                <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ pipBubbleStyle }}">{{ activeReply }}</div>
+                  <button onClick="{{ resetMic }}" style="{{ linkBtnStyle }}">ask a follow-up</button>
+                </sc-if>
+
+                <sc-if value="{{ isIdleOrListening }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.5);">{{ phaseHint }}</div>
+                </sc-if>
+              </div>
+
+              <button onClick="{{ endTalk }}" style="{{ endTalkBtnStyle }}">End talk</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ keyboardFullscreen }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ keyboardOverlayStyle }}">
+              <div onTouchStart="{{ onVoiceDragStart }}" onTouchEnd="{{ onKeyboardDragEnd }}" onMouseDown="{{ onVoiceDragStart }}" onMouseUp="{{ onKeyboardDragEnd }}" style="{{ voiceDragHandleStyle }}"></div>
+              <button onClick="{{ endKeyboardTalk }}" style="{{ voiceCloseBtnStyle }}">✕</button>
+              <div style="{{ voiceOverlayLabelStyle }}">
+                <div style="font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#2B2320;">{{ buddy.name }}</div>
+                <div style="font-family:Inter,sans-serif; font-size:12px; color:rgba(43,35,32,0.45);">{{ kbPhaseLabel }}</div>
+              </div>
+
+              <div style="flex:1; display:flex; flex-direction:column; overflow:auto; padding:14px 16px; gap:10px;">
+                <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
+                  <div style="{{ m.wrapStyle }}">
+                    <div style="{{ m.bubbleStyle }}">{{ m.text }}</div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ kbThinking }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; gap:6px; height:14px; padding-left:4px;">
+                    <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ showKbFollowup }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ focusComposer }}" style="{{ linkBtnStyle }}">ask a follow-up</button>
+                </sc-if>
+              </div>
+              <div style="{{ composerRowStyle }}">
+                <input type="text" value="{{ typedText }}" onChange="{{ onTypeChange }}" onKeyDown="{{ onTypeKeyDown }}" placeholder="Message Pip…" style="{{ composerInputStyle }}" ref="{{ composerRef }}"/>
+                <button onClick="{{ sendTyped }}" style="{{ sendBtnStyle }}">↑</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showHistory }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ overlayLeftStyle }}">
+              <div style="{{ overlayHeaderStyle }}">
+                <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2B2320;">History</div>
+                <button onClick="{{ closeHistory }}" style="{{ iconBtnStyle }}">✕</button>
+              </div>
+              <input type="text" value="{{ historySearchText }}" onChange="{{ onHistorySearchChange }}" placeholder="Search conversations" style="{{ searchInputStyle }}"/>
+              <div style="{{ historyFilterRowStyle }}">
+                <sc-for list="{{ historyCategoryChips }}" as="c" hint-placeholder-count="5">
+                  <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                </sc-for>
+              </div>
+              <div style="overflow:auto; flex:1;">
+                <sc-if value="{{ hasFilteredToday }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ historyGroupLabelStyle }}">TODAY</div>
+                  <sc-for list="{{ filteredHistoryToday }}" as="h" hint-placeholder-count="2">
+                    <div onClick="{{ closeHistory }}" style="{{ historyRowStyle }}">
+                      <div style="font-family:'Fredoka',sans-serif; font-size:15px; font-weight:500; color:#2B2320;">{{ h.emoji }} {{ h.title }}</div>
+                      <div style="font-family:Inter,sans-serif; font-size:13px; color:rgba(43,35,32,0.5); margin-top:2px;">{{ h.snippet }}</div>
+                    </div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ hasFilteredYesterday }}" hint-placeholder-val="{{ true }}">
+                  <div style="{{ historyGroupLabelStyle }}">YESTERDAY</div>
+                  <sc-for list="{{ filteredHistoryYesterday }}" as="h" hint-placeholder-count="3">
+                    <div onClick="{{ closeHistory }}" style="{{ historyRowStyle }}">
+                      <div style="font-family:'Fredoka',sans-serif; font-size:15px; font-weight:500; color:#2B2320;">{{ h.emoji }} {{ h.title }}</div>
+                      <div style="font-family:Inter,sans-serif; font-size:13px; color:rgba(43,35,32,0.5); margin-top:2px;">{{ h.snippet }}</div>
+                    </div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ noFilteredResults }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:32px 18px; text-align:center; font-family:Inter,sans-serif; font-size:13px; color:rgba(43,35,32,0.4);">No conversations match</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ overlayRightStyle }}">
+              <div style="{{ overlayHeaderStyle }}">
+                <button onClick="{{ closeSettings }}" style="{{ iconBtnStyle }}">‹</button>
+                <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#2B2320;">Your sidekick</div>
+                <div style="width:36px;"></div>
+              </div>
+              <div style="overflow:auto; flex:1; padding:4px 20px 24px;">
+
+                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; margin:6px 0 22px;">
+                  <div style="{{ settingsHeroBlobStyle }}">
+                    <div style="{{ eyeLeftIdle }}"></div>
+                    <div style="{{ eyeRightIdle }}"></div>
+                    <div style="{{ mouthIdle }}"></div>
+                  </div>
+                  <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#2B2320;">{{ buddy.name }}</div>
+                  <div style="font-family:Inter,sans-serif; font-size:13px; color:rgba(43,35,32,0.5);">{{ tagline }}</div>
+                </div>
+
+                <div onClick="{{ openProfile }}" style="{{ profileRowStyle }}">
+                  <div style="{{ profileRowAvatarStyle }}">{{ profile.initials }}</div>
+                  <div style="flex:1;">
+                    <div style="font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#2B2320;">{{ profile.fullName }}</div>
+                    <div style="font-family:Inter,sans-serif; font-size:12.5px; color:rgba(43,35,32,0.5);">{{ profile.username }}</div>
+                  </div>
+                  <div style="font-family:Inter,sans-serif; font-size:18px; color:rgba(43,35,32,0.3);">›</div>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">SWITCH BUDDY</div>
+                <div style="display:flex; gap:12px; margin-bottom:24px;">
+                  <sc-for list="{{ buddies }}" as="b" hint-placeholder-count="4">
+                    <div onClick="{{ b.onClick }}" style="{{ b.miniCardStyle }}">
+                      <div style="{{ b.miniBlobStyle }}"></div>
+                      <div style="font-family:Inter,sans-serif; font-size:11px; color:#2B2320; font-weight:500;">{{ b.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">PERSONALITY</div>
+                <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+                  <sc-for list="{{ personalities }}" as="p" hint-placeholder-count="4">
+                    <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+                  </sc-for>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">VOICE &amp; REACTIONS</div>
+                <div style="{{ settingsCardStyle }}">
+                  <div style="{{ toggleRowStyle }}">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320;">Voice replies</div>
+                    <div onClick="{{ toggleVoiceReplies }}" style="{{ voiceReplyTrack }}"><div style="{{ voiceReplyKnob }}"></div></div>
+                  </div>
+                  <div style="{{ toggleRowStyle }}">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320;">Animated reactions</div>
+                    <div onClick="{{ toggleAnimatedReactions }}" style="{{ animatedReactionsTrack }}"><div style="{{ animatedReactionsKnob }}"></div></div>
+                  </div>
+                  <div style="{{ toggleRowStyleLast }}">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320;">Haptics</div>
+                    <div onClick="{{ toggleHaptics }}" style="{{ hapticsTrack }}"><div style="{{ hapticsKnob }}"></div></div>
+                  </div>
+                </div>
+
+                <div style="{{ sliderCardStyle }}">
+                  <div style="font-family:Inter,sans-serif; font-size:14px; color:#2B2320; margin-bottom:10px;">Speaking speed</div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-family:Inter,sans-serif; font-size:12px; color:rgba(43,35,32,0.45);">slow</span>
+                    <input type="range" min="0" max="100" value="{{ speakingSpeed }}" onChange="{{ onSpeedChange }}" style="{{ sliderStyle }}"/>
+                    <span style="font-family:Inter,sans-serif; font-size:12px; color:rgba(43,35,32,0.45);">fast</span>
+                  </div>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">APPEARANCE</div>
+                <div style="{{ settingsCardStyle }}">
+                  <div style="{{ toggleRowStyle }}">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320;">Theme</div>
+                    <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.5);">System Default</div>
+                  </div>
+                  <div style="padding:14px 0 16px;">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320; margin-bottom:12px;">Brand color</div>
+                    <div style="{{ brandColorRowStyle }}">
+                      <sc-for list="{{ brandColorOptions }}" as="c" hint-placeholder-count="7">
+                        <div onClick="{{ c.onClick }}" style="{{ c.wrapStyle }}">
+                          <div style="{{ c.swatchStyle }}">
+                            <sc-if value="{{ c.selected }}" hint-placeholder-val="{{ false }}">
+                              <div style="{{ c.checkStyle }}">✓</div>
+                            </sc-if>
+                          </div>
+                          <div style="{{ c.labelStyle }}">{{ c.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">PRIVACY</div>
+                <div style="{{ settingsCardStyle }}">
+                  <div style="{{ toggleRowStyleLast }}">
+                    <div style="font-family:Inter,sans-serif; font-size:15px; color:#2B2320;">Store conversations</div>
+                    <div onClick="{{ toggleStoreConversations }}" style="{{ storeConversationsTrack }}"><div style="{{ storeConversationsKnob }}"></div></div>
+                  </div>
+                </div>
+                <button onClick="{{ clearHistory }}" style="{{ dangerBtnStyle }}">Clear all history</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showProfile }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ overlayRightStyle }}">
+              <div style="{{ overlayHeaderStyle }}">
+                <button onClick="{{ closeProfile }}" style="{{ iconBtnStyle }}">‹</button>
+                <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#2B2320;">Profile</div>
+                <button onClick="{{ openSettings }}" style="{{ iconBtnStyle }}">⚙</button>
+              </div>
+              <div style="overflow:auto; flex:1; padding:4px 20px 28px;">
+
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin:10px 0 26px;">
+                  <div style="{{ profileAvatarStyle }}">{{ profile.initials }}</div>
+                  <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2B2320;">{{ profile.fullName }}</div>
+                  <div style="font-family:Inter,sans-serif; font-size:14px; color:rgba(43,35,32,0.5);">{{ profile.username }}</div>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">PERSONAL INFORMATION</div>
+                <div style="{{ settingsCardStyle }}">
+                  <sc-for list="{{ profileFields }}" as="f" hint-placeholder-count="4">
+                    <div style="{{ f.rowStyle }}">
+                      <div style="{{ f.iconWrapStyle }}">{{ f.icon }}</div>
+                      <div style="flex:1;">
+                        <div style="{{ f.labelStyle }}">{{ f.label }}</div>
+                        <div style="{{ f.valueStyle }}">{{ f.value }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="{{ sectionLabelStyle }}">SETTINGS</div>
+                <div style="{{ settingsCardStyle }}">
+                  <sc-for list="{{ profileSettingsLinks }}" as="l" hint-placeholder-count="5">
+                    <div onClick="{{ l.onClick }}" style="{{ l.rowStyle }}">
+                      <div style="{{ l.iconWrapStyle }}">{{ l.icon }}</div>
+                      <div style="{{ l.labelStyle }}">{{ l.label }}</div>
+                      <div style="{{ l.chevronStyle }}">›</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+        </sc-if>
+
+      </div>
+    </x-import>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultBuddy&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;pip&quot;,&quot;options&quot;:[&quot;pip&quot;,&quot;bloop&quot;,&quot;sunny&quot;,&quot;coco&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype defaults&quot;},&quot;defaultPersonality&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;calm&quot;,&quot;options&quot;:[&quot;calm&quot;,&quot;chatty&quot;,&quot;witty&quot;,&quot;coach&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype defaults&quot;},&quot;showOnboarding&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype defaults&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: this.props.showOnboarding === false ? 'home' : 'splash',
+    splashMessageIndex: 0,
+    buddy: this.props.defaultBuddy || 'pip',
+    personality: this.props.defaultPersonality || 'calm',
+    micPhase: 'idle',
+    inputMode: 'mic',
+    typedText: '',
+    messages: [],
+    showHistory: false,
+    showSettings: false,
+    showProfile: false,
+    historySearchText: '',
+    historyCategory: 'all',
+    voiceFullscreen: false,
+    voiceClosing: false,
+    keyboardFullscreen: false,
+    keyboardClosing: false,
+    kbThinking: false,
+    showPipPopup: false,
+    pipClosing: false,
+    showCategoryPopup: false,
+    categoryClosing: false,
+    voiceReplies: true,
+    animatedReactions: true,
+    haptics: true,
+    storeConversations: true,
+    speakingSpeed: 50,
+    brandColor: (typeof localStorage !== 'undefined' && localStorage.getItem('pip-brand-color')) || '#3B82F6',
+    authMode: 'login',
+    authLoading: false,
+    authEmail: '',
+    authPassword: '',
+    authFullName: '',
+    authConfirmPassword: '',
+    activeQuestion: "What's on my calendar this afternoon?",
+    activeReply: "You have three meetings today — you're free after 2:00 PM. 🎉",
+  };
+
+  topicDefs = [
+    { emoji: '💬', label: 'Chat Santai', question: 'Just want to chat for a bit.', reply: "Always down for that — what's on your mind?" },
+    { emoji: '📚', label: 'Belajar', question: 'Help me study for my exam.', reply: "Let's break it into small chunks — 20 min sound good?" },
+    { emoji: '💼', label: 'Kerja', question: 'What meetings do I have today?', reply: 'Three meetings — free after 2pm 🎉' },
+    { emoji: '💻', label: 'Teknologi', question: "What's new in tech today?", reply: 'A big update just dropped — want the highlights?' },
+    { emoji: '🛒', label: 'Belanja', question: 'Add milk and eggs to my list.', reply: 'Added! Anything else for the list?' },
+    { emoji: '🎬', label: 'Hiburan', question: 'Recommend something to watch.', reply: 'A cozy mystery series just came out — want the name?' },
+    { emoji: '🍔', label: 'Kuliner', question: 'Find a good dinner spot nearby.', reply: 'Found a few 4.5★ spots close by 🍜' },
+    { emoji: '✈️', label: 'Travel', question: 'Plan a weekend trip.', reply: 'Short flights + good weather this weekend — want ideas?' },
+    { emoji: '💰', label: 'Keuangan', question: 'How much did I spend this week?', reply: 'A bit over budget on dining — want a breakdown?' },
+    { emoji: '❤️', label: 'Kesehatan', question: 'Remind me to drink water.', reply: "You got it — I'll nudge you every 2 hours." },
+    { emoji: '🛠️', label: 'Bantuan & Tutorial', question: 'Show me how this works.', reply: "Happy to! Let's start with the basics." },
+    { emoji: '🎨', label: 'Kreativitas', question: 'Give me an idea to sketch.', reply: 'Try drawing your morning as a tiny landscape 🎨' },
+  ];
+
+  buddyDefs = [
+    { id: 'pip', name: 'Pip', from: '#FF9466', to: '#FF5F82' },
+    { id: 'bloop', name: 'Bloop', from: '#54D6C8', to: '#3E8BFF' },
+    { id: 'sunny', name: 'Sunny', from: '#FFD24D', to: '#FF9F43' },
+    { id: 'coco', name: 'Coco', from: '#C58BFF', to: '#7C6EF6' },
+  ];
+
+  profileData = { fullName: 'Jordan Diaz', username: '@jordandiaz', initials: 'JD' };
+  profileFields = [
+    { id: 'name', icon: '👤', label: 'FULL NAME', value: 'Jordan Diaz' },
+    { id: 'dob', icon: '🎂', label: 'DATE OF BIRTH', value: 'March 14, 1995' },
+    { id: 'email', icon: '✉️', label: 'EMAIL ADDRESS', value: 'jordan.diaz@email.com' },
+    { id: 'phone', icon: '📱', label: 'PHONE NUMBER', value: '+1 (555) 219-4830', last: true },
+  ];
+
+  brandColorDefs = [
+    { id: 'blue', hex: '#3B82F6', emoji: '🔵', label: 'Blue' },
+    { id: 'purple', hex: '#8B5CF6', emoji: '🟣', label: 'Purple' },
+    { id: 'green', hex: '#22C55E', emoji: '🟢', label: 'Green' },
+    { id: 'orange', hex: '#F97316', emoji: '🟠', label: 'Orange' },
+    { id: 'red', hex: '#EF4444', emoji: '🔴', label: 'Red' },
+    { id: 'pink', hex: '#EC4899', emoji: '🩷', label: 'Pink' },
+    { id: 'teal', hex: '#14B8A6', emoji: '🟦', label: 'Teal' },
+  ];
+
+  toLogin = () => this.setState({ authMode: 'login' });
+  toRegister = () => this.setState({ authMode: 'register' });
+  onAuthEmailChange = (e) => this.setState({ authEmail: e.target.value });
+  onAuthPasswordChange = (e) => this.setState({ authPassword: e.target.value });
+  onAuthFullNameChange = (e) => this.setState({ authFullName: e.target.value });
+  onAuthConfirmChange = (e) => this.setState({ authConfirmPassword: e.target.value });
+
+  submitAuth = () => {
+    this.clearTimers();
+    this.setState({ authLoading: true });
+    const t = setTimeout(() => {
+      this.setState({ authLoading: false, screen: 'onboard1' });
+    }, 1100);
+    this._timers = [...(this._timers || []), t];
+  };
+  googleSignIn = () => this.submitAuth();
+  appleSignIn = () => this.submitAuth();
+  continueAsGuest = () => { this.clearTimers(); this.setState({ screen: 'onboard1' }); };
+
+  setBrandColor = (hex) => {
+    this.setState({ brandColor: hex });
+    if (typeof localStorage !== 'undefined') localStorage.setItem('pip-brand-color', hex);
+  };
+
+  profileSettingsDefs = [
+    { id: 'account', icon: '🧑‍💼', label: 'Account Settings' },
+    { id: 'privacy', icon: '🔒', label: 'Privacy Settings' },
+    { id: 'notifications', icon: '🔔', label: 'Notification Settings' },
+    { id: 'security', icon: '🛡️', label: 'Security Settings' },
+    { id: 'language', icon: '🌐', label: 'Language Settings', last: true },
+  ];
+
+  taglineMap = {
+    calm: 'calm · warm · keeps it short',
+    chatty: 'chatty · upbeat · loves details',
+    witty: 'witty · playful · quick quips',
+    coach: 'coach · encouraging · to the point',
+  };
+
+  replyPool = [
+    "Got it — I'll keep that in mind.",
+    'Three meetings today, free after 2pm 🎉',
+    "On it. I'll let you know.",
+    'Noted — anything else?',
+  ];
+
+  clearTimers() {
+    (this._timers || []).forEach(clearTimeout);
+    this._timers = [];
+  }
+  componentWillUnmount() { this.clearTimers(); if (this._splashInterval) clearInterval(this._splashInterval); }
+
+  splashMessages = ['Getting everything ready…', 'Preparing your AI assistant…', 'Almost there…'];
+
+  componentDidMount() {
+    if (this.state.screen === 'splash') {
+      const interval = setInterval(() => {
+        this.setState((s) => ({ splashMessageIndex: (s.splashMessageIndex + 1) % this.splashMessages.length }));
+      }, 900);
+      this._splashInterval = interval;
+      const t = setTimeout(() => {
+        if (this.state.screen === 'splash') this.setState({ screen: 'auth' });
+      }, 2700);
+      this._timers = [...(this._timers || []), t];
+    }
+  }
+  skipSplash = () => {
+    this.clearTimers();
+    if (this._splashInterval) clearInterval(this._splashInterval);
+    this.setState({ screen: 'auth' });
+  };
+
+  goTo = (screen) => {
+    this.clearTimers();
+    this.setState({ screen, showHistory: false, showSettings: false, micPhase: 'idle' });
+  };
+  skip = () => this.goTo('home');
+  toOnboard2 = () => this.setState({ screen: 'onboard2' });
+  toOnboard3 = () => this.setState({ screen: 'onboard3' });
+  toHome = () => this.setState({ screen: 'home' });
+  selectBuddy = (id) => this.setState({ buddy: id });
+  setPersonality = (p) => this.setState({ personality: p });
+
+  openHistory = () => this.setState({ showHistory: true, showSettings: false });
+  closeHistory = () => this.setState({ showHistory: false });
+  onHistorySearchChange = (e) => this.setState({ historySearchText: e.target.value });
+  setHistoryCategory = (cat) => this.setState({ historyCategory: cat });
+  openSettings = () => this.setState({ showSettings: true, showHistory: false, showProfile: false });
+  closeSettings = () => this.setState({ showSettings: false });
+  openProfile = () => this.setState({ showProfile: true, showHistory: false, showSettings: false });
+  closeProfile = () => this.setState({ showProfile: false });
+
+  setMicModeVoice = () => this.setState({ inputMode: 'mic' });
+  setMicModeKeyboard = () => this.setState({ inputMode: 'keyboard', voiceFullscreen: false });
+
+  endTalk = () => {
+    this.clearTimers();
+    this.setState({ voiceClosing: true });
+    const t = setTimeout(() => {
+      this.setState({ voiceFullscreen: false, voiceClosing: false, micPhase: 'idle', inputMode: 'mic' });
+    }, 260);
+    this._timers = [...(this._timers || []), t];
+  };
+
+  onVoiceDragStart = (e) => {
+    this._dragStartY = (e.touches ? e.touches[0].clientY : e.clientY);
+  };
+  onVoiceDragEnd = (e) => {
+    if (this._dragStartY == null) return;
+    const endY = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY);
+    if (endY - this._dragStartY > 70) this.endTalk();
+    this._dragStartY = null;
+  };
+  onKeyboardDragEnd = (e) => {
+    if (this._dragStartY == null) return;
+    const endY = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY);
+    if (endY - this._dragStartY > 70) this.endKeyboardTalk();
+    this._dragStartY = null;
+  };
+
+  openKeyboardFullscreen = () => {
+    this.clearTimers();
+    if (this.state.messages.length === 0) {
+      this.setState({ messages: [{ from: 'user', text: 'Can you draft a quick email to Sam about the budget?' }], kbThinking: true });
+      const t = setTimeout(() => {
+        this.setState((s) => ({ messages: [...s.messages, { from: 'pip', text: "Done — draft's in your outbox, ready to send ✉️" }], kbThinking: false }));
+      }, 1100);
+      this._timers = [...(this._timers || []), t];
+    }
+    this.setState({ keyboardFullscreen: true, keyboardClosing: false });
+  };
+
+  tapKeyboardCategory = (topic) => {
+    this.clearTimers();
+    this.setState({ messages: [{ from: 'user', text: topic.question }], kbThinking: true, keyboardFullscreen: true, keyboardClosing: false });
+    const t = setTimeout(() => {
+      this.setState((s) => ({ messages: [...s.messages, { from: 'pip', text: topic.reply }], kbThinking: false }));
+    }, 1100);
+    this._timers = [...(this._timers || []), t];
+  };
+
+  endKeyboardTalk = () => {
+    this.clearTimers();
+    this.setState({ keyboardClosing: true });
+    const t = setTimeout(() => this.setState({ keyboardFullscreen: false, keyboardClosing: false }), 260);
+    this._timers = [...(this._timers || []), t];
+  };
+
+  focusComposer = () => { if (this.composerEl) this.composerEl.focus(); };
+  setComposerRef = (el) => { this.composerEl = el; };
+
+  stopPropagation = (e) => e.stopPropagation();
+
+  openPipPopup = () => { this.setState({ showPipPopup: true, pipClosing: false }); };
+  closePipPopup = () => {
+    this.setState({ pipClosing: true });
+    const t = setTimeout(() => this.setState({ showPipPopup: false, pipClosing: false }), 220);
+    this._timers = [...(this._timers || []), t];
+  };
+  selectBuddyFromPopup = (id) => { this.selectBuddy(id); this.closePipPopup(); };
+  setPersonalityFromPopup = (p) => { this.setPersonality(p); this.closePipPopup(); };
+
+  openCategoryPopup = () => { this.setState({ showCategoryPopup: true, categoryClosing: false }); };
+  closeCategoryPopup = () => {
+    this.setState({ categoryClosing: true });
+    const t = setTimeout(() => this.setState({ showCategoryPopup: false, categoryClosing: false }), 220);
+    this._timers = [...(this._timers || []), t];
+  };
+  selectCategoryFromPopup = (topic) => {
+    this.tapCategory(topic);
+    this.setState({ categoryClosing: true });
+    const t = setTimeout(() => this.setState({ showCategoryPopup: false, categoryClosing: false }), 220);
+    this._timers = [...(this._timers || []), t];
+  };
+
+  tapBlob = () => {
+    const phase = this.state.micPhase;
+    this.clearTimers();
+    if (phase === 'idle') {
+      this.setState({
+        micPhase: 'listening',
+        voiceFullscreen: true,
+        activeQuestion: "What's on my calendar this afternoon?",
+        activeReply: "You have three meetings today — you're free after 2:00 PM. 🎉",
+      });
+      const t1 = setTimeout(() => this.setState({ micPhase: 'thinking' }), 1400);
+      const t2 = setTimeout(() => this.setState({ micPhase: 'done' }), 2600);
+      const t3 = setTimeout(() => this.setState({ micPhase: 'idle' }), 6400);
+      this._timers = [t1, t2, t3];
+    } else if (phase === 'listening') {
+      this.setState({ micPhase: 'thinking' });
+      const t1 = setTimeout(() => this.setState({ micPhase: 'done' }), 1000);
+      const t2 = setTimeout(() => this.setState({ micPhase: 'idle' }), 3800);
+      this._timers = [t1, t2];
+    } else {
+      this.setState({ micPhase: 'idle' });
+    }
+  };
+  resetMic = () => { this.clearTimers(); this.setState({ micPhase: 'idle' }); };
+
+  tapCategory = (topic) => {
+    this.clearTimers();
+    this.setState({ micPhase: 'listening', activeQuestion: topic.question, activeReply: topic.reply });
+    const t1 = setTimeout(() => this.setState({ micPhase: 'thinking' }), 1200);
+    const t2 = setTimeout(() => this.setState({ micPhase: 'done' }), 2200);
+    const t3 = setTimeout(() => this.setState({ micPhase: 'idle' }), 6000);
+    this._timers = [t1, t2, t3];
+  };
+
+  onTypeChange = (e) => this.setState({ typedText: e.target.value });
+  onTypeKeyDown = (e) => { if (e.key === 'Enter') this.sendTyped(); };
+  sendTyped = () => {
+    const text = this.state.typedText.trim();
+    if (!text) return;
+    const reply = this.replyPool[Math.floor(Math.random() * this.replyPool.length)];
+    this.setState((s) => ({ messages: [...s.messages, { from: 'user', text }], typedText: '' }));
+    const t = setTimeout(() => {
+      this.setState((s) => ({ messages: [...s.messages, { from: 'pip', text: reply }] }));
+    }, 900);
+    this._timers = [...(this._timers || []), t];
+  };
+
+  toggleVoiceReplies = () => this.setState((s) => ({ voiceReplies: !s.voiceReplies }));
+  toggleAnimatedReactions = () => this.setState((s) => ({ animatedReactions: !s.animatedReactions }));
+  toggleHaptics = () => this.setState((s) => ({ haptics: !s.haptics }));
+  toggleStoreConversations = () => this.setState((s) => ({ storeConversations: !s.storeConversations }));
+  onSpeedChange = (e) => this.setState({ speakingSpeed: Number(e.target.value) });
+  clearHistory = () => this.setState({ messages: [] });
+
+  renderVals() {
+    const s = this.state;
+    const buddy = this.buddyDefs.find((b) => b.id === s.buddy) || this.buddyDefs[0];
+    const dark = '#2B2320';
+    const accent = s.brandColor;
+    const accentSoft = accent + '1f';
+
+    const trackStyle = (on) => ({
+      width: 42, height: 25, borderRadius: 13, background: on ? accent : 'rgba(43,35,32,0.15)',
+      position: 'relative', transition: 'background .2s', cursor: 'pointer', flexShrink: 0,
+    });
+    const knobStyle = (on) => ({
+      width: 21, height: 21, borderRadius: 11, background: '#fff', position: 'absolute',
+      top: 2, left: on ? 19 : 2, transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+    });
+
+    const buddies = this.buddyDefs.map((b) => {
+      const selected = b.id === s.buddy;
+      return {
+        ...b,
+        onClick: () => this.selectBuddy(b.id),
+        popupSelect: () => this.selectBuddyFromPopup(b.id),
+        cardStyle: {
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          padding: '18px 8px', borderRadius: 20, cursor: 'pointer',
+          background: selected ? 'rgba(0,0,0,0.04)' : 'transparent',
+          border: selected ? `2px solid ${b.to}` : '2px solid transparent',
+          transition: 'all .15s',
+        },
+        blobStyle: {
+          width: 64, height: 64, borderRadius: '44% 56% 60% 40% / 48% 42% 58% 52%',
+          background: `linear-gradient(135deg, ${b.from}, ${b.to})`,
+          boxShadow: `0 10px 24px -10px ${b.to}aa`,
+        },
+        miniCardStyle: {
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer',
+          padding: '6px 4px', borderRadius: 14,
+          background: selected ? 'rgba(0,0,0,0.04)' : 'transparent',
+          border: selected ? `2px solid ${b.to}` : '2px solid transparent',
+        },
+        miniBlobStyle: {
+          width: 40, height: 40, borderRadius: '44% 56% 60% 40% / 48% 42% 58% 52%',
+          background: `linear-gradient(135deg, ${b.from}, ${b.to})`,
+        },
+      };
+    });
+
+    const topics = this.topicDefs.map((t) => ({
+      ...t,
+      onClick: () => this.tapCategory(t),
+      kbOnClick: () => this.tapKeyboardCategory(t),
+      popupSelect: () => this.selectCategoryFromPopup(t),
+      gridCardStyle: {
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+        padding: '16px 8px', borderRadius: 18, cursor: 'pointer', background: 'rgba(43,35,32,0.04)',
+      },
+      gridIconWrapStyle: {
+        width: 46, height: 46, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 21, background: accentSoft,
+      },
+      gridLabelStyle: {
+        fontFamily: 'Inter,sans-serif', fontSize: 11.5, fontWeight: 500, color: 'rgba(43,35,32,0.7)',
+        textAlign: 'center', lineHeight: 1.2,
+      },
+      cardStyle: {
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0,
+        width: 74, padding: '12px 6px', borderRadius: 18, cursor: 'pointer',
+        background: 'rgba(43,35,32,0.04)',
+      },
+      iconWrapStyle: {
+        width: 40, height: 40, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 19, background: accentSoft,
+      },
+      labelStyle: {
+        fontFamily: 'Inter,sans-serif', fontSize: 10.5, fontWeight: 500, color: 'rgba(43,35,32,0.65)',
+        textAlign: 'center', lineHeight: 1.2,
+      },
+    }));
+
+    const personalityList = ['calm', 'chatty', 'witty', 'coach'];
+    const personalities = personalityList.map((p) => {
+      const active = p === s.personality;
+      return {
+        id: p,
+        label: p.charAt(0).toUpperCase() + p.slice(1),
+        onClick: () => this.setPersonality(p),
+        popupSelect: () => this.setPersonalityFromPopup(p),
+        style: {
+          fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: 500,
+          padding: '8px 16px', borderRadius: 999, cursor: 'pointer', border: 'none',
+          background: active ? accent : 'rgba(43,35,32,0.06)',
+          color: active ? '#fff' : dark,
+        },
+      };
+    });
+
+    const isSplash = s.screen === 'splash';
+    const isAuth = s.screen === 'auth';
+    const isLoginMode = isAuth && s.authMode === 'login';
+    const isRegisterMode = isAuth && s.authMode === 'register';
+    const isOnboard1 = s.screen === 'onboard1';
+    const isOnboard2 = s.screen === 'onboard2';
+    const isOnboard3 = s.screen === 'onboard3';
+    const isHome = s.screen === 'home';
+    const isMicMode = isHome && s.inputMode === 'mic';
+    const isKeyboardMode = isHome && s.inputMode === 'keyboard';
+    const isIdle = s.micPhase === 'idle';
+    const isListening = s.micPhase === 'listening';
+    const isThinking = s.micPhase === 'thinking';
+    const isDone = s.micPhase === 'done';
+
+    const phaseLabelMap = { idle: 'tap to talk', listening: "I'm all ears", thinking: 'thinking…', done: 'here you go' };
+    const phaseHintMap = { idle: 'tap the blob to talk', listening: 'tap again to stop' };
+
+    let blobRadius = '42% 58% 65% 35% / 45% 40% 60% 55%';
+    let animation = 'breathe 3.4s ease-in-out infinite';
+    if (isListening) animation = 'listenPulse 0.85s ease-in-out infinite';
+    if (isThinking) animation = 'thinkPulse 1s ease-in-out infinite';
+    if (isDone) animation = 'popIn 0.4s ease-out';
+
+    const eyeBase = { position: 'absolute', width: 15, height: 15, background: '#2B2320' };
+    let eyeLeft, eyeRight, mouth;
+    if (isListening) {
+      eyeLeft = { ...eyeBase, borderRadius: '50%', top: 66, left: 60 };
+      eyeRight = { ...eyeBase, borderRadius: '50%', top: 66, right: 60 };
+      mouth = { position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#2B2320', bottom: 58, left: '50%', transform: 'translateX(-50%)' };
+    } else if (isThinking) {
+      eyeLeft = { ...eyeBase, height: 3, borderRadius: 2, top: 74, left: 58 };
+      eyeRight = { ...eyeBase, height: 3, borderRadius: 2, top: 74, right: 58 };
+      mouth = { position: 'absolute', width: 18, height: 3, background: '#2B2320', borderRadius: 2, bottom: 62, left: '50%', transform: 'translateX(-50%)' };
+    } else if (isDone) {
+      eyeLeft = { position: 'absolute', width: 16, height: 9, borderBottom: '3px solid #2B2320', borderRadius: '0 0 16px 16px', top: 68, left: 56, background: 'none' };
+      eyeRight = { position: 'absolute', width: 16, height: 9, borderBottom: '3px solid #2B2320', borderRadius: '0 0 16px 16px', top: 68, right: 56, background: 'none' };
+      mouth = { position: 'absolute', width: 34, height: 18, borderBottom: '4px solid #2B2320', borderRadius: '0 0 34px 34px', bottom: 54, left: '50%', transform: 'translateX(-50%)', background: 'none' };
+    } else {
+      eyeLeft = { position: 'absolute', width: 14, height: 8, borderBottom: '3px solid #2B2320', borderRadius: '0 0 14px 14px', top: 70, left: 58, background: 'none' };
+      eyeRight = { position: 'absolute', width: 14, height: 8, borderBottom: '3px solid #2B2320', borderRadius: '0 0 14px 14px', top: 70, right: 58, background: 'none' };
+      mouth = { position: 'absolute', width: 22, height: 11, borderBottom: '3px solid #2B2320', borderRadius: '0 0 22px 22px', bottom: 60, left: '50%', transform: 'translateX(-50%)', background: 'none' };
+    }
+
+    const showDots = isThinking;
+    const dots = [0, 1, 2].map((i) => ({
+      style: { width: 7, height: 7, borderRadius: '50%', background: accent, animation: `dotBounce 1.1s ease-in-out ${i * 0.15}s infinite` },
+    }));
+
+    const messages = s.messages.map((m) => ({
+      ...m,
+      wrapStyle: { display: 'flex', justifyContent: m.from === 'user' ? 'flex-end' : 'flex-start' },
+      bubbleStyle: {
+        maxWidth: '75%', padding: '10px 14px', borderRadius: 16, fontFamily: 'Inter,sans-serif', fontSize: 14, lineHeight: 1.4,
+        background: m.from === 'user' ? accent : 'rgba(43,35,32,0.06)',
+        color: m.from === 'user' ? '#fff' : dark,
+        animation: 'fadeUp 0.25s ease-out',
+      },
+    }));
+
+    const historyToday = [
+      { title: 'How many meetings today?', snippet: 'Three today — and a free afternoon 🎉', category: 'Kerja', emoji: '💼' },
+      { title: 'Draft email to Sam', snippet: 'Follow-up about Q3 budget', category: 'Kerja', emoji: '💼' },
+    ];
+    const historyYesterday = [
+      { title: 'Move the 3pm to tomorrow', snippet: 'Done — calendar updated', category: 'Kerja', emoji: '💼' },
+      { title: 'Recipe ideas', snippet: 'Something with chickpeas', category: 'Kuliner', emoji: '🍔' },
+      { title: 'Trip packing list', snippet: 'Weekend in Portland', category: 'Travel', emoji: '✈️' },
+    ];
+
+    const matchesFilter = (h) => {
+      const q = s.historySearchText.trim().toLowerCase();
+      const matchesText = !q || h.title.toLowerCase().includes(q) || h.snippet.toLowerCase().includes(q);
+      const matchesCat = s.historyCategory === 'all' || h.category === s.historyCategory;
+      return matchesText && matchesCat;
+    };
+    const filteredHistoryToday = historyToday.filter(matchesFilter);
+    const filteredHistoryYesterday = historyYesterday.filter(matchesFilter);
+
+    const usedCategories = [...new Set([...historyToday, ...historyYesterday].map((h) => h.category))];
+    const historyCategoryChips = ['all', ...usedCategories].map((cat) => {
+      const active = s.historyCategory === cat;
+      return {
+        id: cat,
+        label: cat === 'all' ? 'All' : cat,
+        onClick: () => this.setHistoryCategory(cat),
+        style: {
+          fontFamily: 'Inter,sans-serif', fontSize: 12.5, fontWeight: 500, padding: '7px 14px', borderRadius: 999,
+          border: 'none', cursor: 'pointer', flexShrink: 0,
+          background: active ? accent : 'rgba(43,35,32,0.06)',
+          color: active ? '#fff' : '#2B2320',
+        },
+      };
+    });
+
+    const navItems = [
+      { id: 'splash', label: 'Splash', onClick: () => this.setState({ screen: 'splash' }), active: s.screen === 'splash' },
+      { id: 'auth', label: 'Auth', onClick: () => this.setState({ screen: 'auth' }), active: s.screen === 'auth' },
+      { id: 'onboarding', label: 'Onboarding', onClick: () => this.goTo('onboard1'), active: s.screen.startsWith('onboard') },
+      { id: 'home', label: 'Core loop', onClick: () => this.goTo('home'), active: isHome && !s.showHistory && !s.showSettings && !s.showProfile },
+      { id: 'history', label: 'History', onClick: () => { this.setState({ screen: 'home', showHistory: true, showSettings: false, showProfile: false }); }, active: s.showHistory },
+      { id: 'settings', label: 'Settings', onClick: () => { this.setState({ screen: 'home', showSettings: true, showHistory: false, showProfile: false }); }, active: s.showSettings },
+      { id: 'profile', label: 'Profile', onClick: () => { this.setState({ screen: 'home', showProfile: true, showHistory: false, showSettings: false }); }, active: s.showProfile },
+    ].map((n) => ({
+      ...n,
+      style: {
+        fontFamily: 'Fredoka,sans-serif', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 999,
+        border: 'none', cursor: 'pointer',
+        background: n.active ? '#2B2320' : 'rgba(43,35,32,0.06)',
+        color: n.active ? '#fff' : '#2B2320',
+      },
+    }));
+
+    const segBase = { fontFamily: 'Fredoka,sans-serif', fontSize: 13, fontWeight: 600, padding: '7px 18px', borderRadius: 999, border: 'none', cursor: 'pointer' };
+
+    return {
+      pageStyle: {
+        minHeight: '100vh', background: '#F6F1EA', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', padding: '48px 24px 80px', position: 'relative', overflow: 'hidden',
+        fontFamily: 'Inter,sans-serif',
+      },
+      decoBlob1Style: { position: 'absolute', width: 420, height: 420, top: -140, left: -140, borderRadius: '50%', background: `radial-gradient(circle, ${accent}45, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' },
+      decoBlob2Style: { position: 'absolute', width: 380, height: 380, bottom: -160, right: -120, borderRadius: '50%', background: `radial-gradient(circle, ${accent}35, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' },
+      navItems,
+      screenWrapStyle: { position: 'relative', height: '100%', width: '100%', overflow: 'hidden', background: '#FFFCF8' },
+      onboardPadStyle: { display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', padding: '68px 24px 46px' },
+      skipBtnStyle: { fontFamily: 'Inter,sans-serif', fontSize: 14, color: 'rgba(43,35,32,0.45)', background: 'none', border: 'none', cursor: 'pointer' },
+      heroBlobStyle: { position: 'relative', width: 150, height: 150, borderRadius: blobRadius, background: `linear-gradient(135deg, ${buddy.from}, ${buddy.to})`, boxShadow: `0 20px 50px -18px ${buddy.to}aa`, animation: 'breathe 3.4s ease-in-out infinite' },
+      eyeLeftIdle: { position: 'absolute', width: 12, height: 7, borderBottom: '2.5px solid #2B2320', borderRadius: '0 0 12px 12px', top: 60, left: 48 },
+      eyeRightIdle: { position: 'absolute', width: 12, height: 7, borderBottom: '2.5px solid #2B2320', borderRadius: '0 0 12px 12px', top: 60, right: 48 },
+      mouthIdle: { position: 'absolute', width: 18, height: 9, borderBottom: '2.5px solid #2B2320', borderRadius: '0 0 18px 18px', bottom: 50, left: '50%', transform: 'translateX(-50%)' },
+      primaryBtnStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 16, fontWeight: 600, color: '#fff', background: accent, border: 'none', borderRadius: 16, padding: '15px', cursor: 'pointer', marginTop: 12 },
+      linkBtnStyle: { fontFamily: 'Inter,sans-serif', fontSize: 14, color: accent, background: 'none', border: 'none', cursor: 'pointer', marginTop: 10, textAlign: 'center' },
+      micIconWrapStyle: { width: 96, height: 96, borderRadius: '50%', background: accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      micIconStyle: { width: 34, height: 50, borderRadius: 18, background: accent },
+      buddy, buddies,
+      toOnboard2: this.toOnboard2, toOnboard3: this.toOnboard3, toHome: this.toHome, skip: this.skip,
+
+      isAuth, isLoginMode, isRegisterMode,
+      authNotLoading: !s.authLoading, authLoading: s.authLoading,
+      authHeading: isRegisterMode ? 'Create your account' : 'Welcome Back 👋',
+      authSubtext: isRegisterMode ? 'Start your journey with Pip.' : 'Sign in to continue your experience.',
+      authWrapStyle: { display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', boxSizing: 'border-box', overflow: 'auto', padding: '52px 24px 40px', gap: 10 },
+      authLogoStyle: {
+        position: 'relative', width: 76, height: 76, borderRadius: blobRadius,
+        background: `linear-gradient(135deg, ${buddy.from}, ${buddy.to})`, boxShadow: `0 14px 30px -14px ${buddy.to}aa`, marginBottom: 8,
+      },
+      authHeadingStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 22, fontWeight: 600, color: '#2B2320', textAlign: 'center' },
+      authSubStyle: { fontFamily: 'Inter,sans-serif', fontSize: 14, color: 'rgba(43,35,32,0.55)', textAlign: 'center', marginBottom: 14 },
+      socialBtnStyle: {
+        width: '100%', display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'Fredoka,sans-serif', fontSize: 14.5, fontWeight: 500,
+        color: '#2B2320', background: '#fff', border: '1px solid rgba(43,35,32,0.12)', borderRadius: 14, padding: '12px 16px',
+        cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 10,
+      },
+      googleBadgeStyle: { width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      appleBadgeStyle: { width: 20, height: 20, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      dividerRowStyle: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '6px 0 14px' },
+      dividerLineStyle: { flex: 1, height: 1, background: 'rgba(43,35,32,0.12)' },
+      dividerTextStyle: { fontFamily: 'Inter,sans-serif', fontSize: 12, color: 'rgba(43,35,32,0.4)' },
+      authInputStyle: { width: '100%', boxSizing: 'border-box', fontFamily: 'Inter,sans-serif', fontSize: 14, padding: '13px 16px', borderRadius: 14, border: 'none', background: 'rgba(43,35,32,0.06)', color: '#2B2320', outline: 'none', marginBottom: 10 },
+      forgotRowStyle: { width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 14, marginTop: -2 },
+      forgotLinkStyle: { fontFamily: 'Inter,sans-serif', fontSize: 12.5, color: accent, background: 'none', border: 'none', cursor: 'pointer' },
+      authPrimaryBtnStyle: {
+        width: '100%', fontFamily: 'Fredoka,sans-serif', fontSize: 16, fontWeight: 600, color: '#fff', background: accent,
+        border: 'none', borderRadius: 16, padding: '15px', cursor: 'pointer', marginBottom: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 20,
+      },
+      authDotsRowStyle: { display: 'flex', gap: 6 },
+      authDots: [0, 1, 2].map((i) => ({
+        style: { width: 7, height: 7, borderRadius: '50%', background: '#fff', animation: `splashDotBounce 1.1s ease-in-out ${i * 0.15}s infinite` },
+      })),
+      authToggleStyle: { fontFamily: 'Inter,sans-serif', fontSize: 13.5, color: 'rgba(43,35,32,0.6)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 18, animation: 'fadeUp 0.2s ease-out' },
+      authToggleAccentStyle: { color: accent, fontWeight: 600 },
+      guestBtnStyle: { fontFamily: 'Inter,sans-serif', fontSize: 13, color: 'rgba(43,35,32,0.4)', background: 'none', border: 'none', cursor: 'pointer' },
+      toLogin: this.toLogin, toRegister: this.toRegister,
+      authEmail: s.authEmail, onAuthEmailChange: this.onAuthEmailChange,
+      authPassword: s.authPassword, onAuthPasswordChange: this.onAuthPasswordChange,
+      authFullName: s.authFullName, onAuthFullNameChange: this.onAuthFullNameChange,
+      authConfirmPassword: s.authConfirmPassword, onAuthConfirmChange: this.onAuthConfirmChange,
+      submitAuth: this.submitAuth, googleSignIn: this.googleSignIn, appleSignIn: this.appleSignIn,
+      continueAsGuest: this.continueAsGuest,
+
+      isSplash, skipSplash: this.skipSplash,
+      splashMessage: this.splashMessages[s.splashMessageIndex],
+      splashWrapStyle: {
+        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%',
+        gap: 14, cursor: 'pointer', overflow: 'hidden', padding: '0 32px', textAlign: 'center', boxSizing: 'border-box',
+        background: `linear-gradient(160deg, ${accent}, color-mix(in srgb, ${accent} 60%, black))`,
+      },
+      splashFloaters: [
+        { top: '14%', left: '12%', size: 46, delay: '0s', dur: '5.5s' },
+        { top: '20%', right: '14%', size: 30, delay: '0.6s', dur: '4.8s' },
+        { bottom: '22%', left: '10%', size: 34, delay: '1.1s', dur: '6.2s' },
+        { bottom: '16%', right: '10%', size: 52, delay: '0.3s', dur: '5s' },
+      ].map((f) => ({
+        style: {
+          position: 'absolute', top: f.top, left: f.left, right: f.right, bottom: f.bottom,
+          width: f.size, height: f.size, borderRadius: '50%', background: 'rgba(255,255,255,0.16)',
+          animation: `floatY ${f.dur} ease-in-out ${f.delay} infinite`,
+        },
+      })),
+      splashBlobStyle: {
+        position: 'relative', width: 120, height: 120, borderRadius: blobRadius, background: 'rgba(255,255,255,0.24)',
+        boxShadow: '0 20px 50px -18px rgba(0,0,0,0.25)', animation: 'breathe 3.4s ease-in-out infinite', zIndex: 1,
+      },
+      splashWordmarkStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 32, fontWeight: 700, color: '#fff', marginTop: 2, zIndex: 1 },
+      splashWelcomeStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 20, fontWeight: 600, color: '#fff', marginTop: 6, zIndex: 1 },
+      splashTaglineStyle: { fontFamily: 'Inter,sans-serif', fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,0.85)', maxWidth: 260, zIndex: 1 },
+      splashLoaderWrapStyle: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 22, zIndex: 1 },
+      splashDotsRowStyle: { display: 'flex', gap: 7 },
+      splashDots: [0, 1, 2].map((i) => ({
+        style: { width: 9, height: 9, borderRadius: '50%', background: '#fff', animation: `splashDotBounce 1.1s ease-in-out ${i * 0.15}s infinite` },
+      })),
+      splashLoadingMsgStyle: { fontFamily: 'Inter,sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.75)' },
+      isOnboard1, isOnboard2, isOnboard3, isHome,
+      isMicMode, isKeyboardMode,
+      isIdle, isListening, isThinking, isDone,
+      isIdleOrListening: isIdle || isListening,
+      showDots, dots,
+      topics,
+      topicScrollStyle: { display: 'flex', gap: 10, overflowX: 'auto', width: '100%', padding: '4px 4px 6px' },
+      inlineCategoryWrapStyle: { width: '100%', marginTop: 6 },
+      inlineCategoryLabelStyle: { fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(43,35,32,0.4)', textAlign: 'center', marginBottom: 6 },
+      activeQuestion: s.activeQuestion, activeReply: s.activeReply,
+      noMessages: s.messages.length === 0,
+      messages,
+
+      homeWrapStyle: { display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', paddingTop: 58 },
+      homeHeaderStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 18px' },
+      iconBtnStyle: { width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(43,35,32,0.06)', fontSize: 15, cursor: 'pointer', color: '#2B2320' },
+      segmentRowStyle: { display: 'flex', justifyContent: 'center', padding: '6px 0 12px' },
+      segmentTrackStyle: { display: 'flex', gap: 2, background: 'rgba(43,35,32,0.06)', borderRadius: 999, padding: 3 },
+      segVoiceBtnStyle: { ...segBase, background: s.inputMode === 'mic' ? '#fff' : 'transparent', color: s.inputMode === 'mic' ? accent : '#2B2320', boxShadow: s.inputMode === 'mic' ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' },
+      segKeyboardBtnStyle: { ...segBase, background: s.inputMode === 'keyboard' ? '#fff' : 'transparent', color: s.inputMode === 'keyboard' ? accent : '#2B2320', boxShadow: s.inputMode === 'keyboard' ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' },
+      setMicModeVoice: this.setMicModeVoice, setMicModeKeyboard: this.setMicModeKeyboard,
+
+      phaseLabel: phaseLabelMap[s.micPhase],
+      phaseHint: phaseHintMap[s.micPhase],
+      blobStyle: { position: 'relative', width: 180, height: 180, borderRadius: blobRadius, background: `linear-gradient(135deg, ${buddy.from}, ${buddy.to})`, boxShadow: `0 24px 60px -20px ${buddy.to}aa`, animation, cursor: 'pointer' },
+      eyeLeft, eyeRight, mouth,
+      tapBlob: this.tapBlob, resetMic: this.resetMic,
+      userBubbleStyle: { fontFamily: 'Inter,sans-serif', fontSize: 14, color: 'rgba(43,35,32,0.55)', textAlign: 'center', maxWidth: 240 },
+      pipBubbleStyle: { fontFamily: 'Inter,sans-serif', fontSize: 15, fontWeight: 500, color: '#2B2320', textAlign: 'center', maxWidth: 260, background: 'rgba(43,35,32,0.05)', padding: '12px 18px', borderRadius: 18, animation: 'fadeUp 0.3s ease-out' },
+
+      composerRowStyle: { display: 'flex', gap: 8, padding: '10px 14px 24px', alignItems: 'center' },
+      composerInputStyle: { flex: 1, fontFamily: 'Inter,sans-serif', fontSize: 14, padding: '11px 16px', borderRadius: 999, border: 'none', background: 'rgba(43,35,32,0.06)', color: '#2B2320', outline: 'none' },
+      sendBtnStyle: { width: 38, height: 38, borderRadius: '50%', border: 'none', background: accent, color: '#fff', fontSize: 16, cursor: 'pointer', flexShrink: 0 },
+      typedText: s.typedText, onTypeChange: this.onTypeChange, onTypeKeyDown: this.onTypeKeyDown, sendTyped: this.sendTyped,
+      composerRef: this.setComposerRef, focusComposer: this.focusComposer,
+
+      keyboardFullscreen: s.keyboardFullscreen, keyboardClosing: s.keyboardClosing,
+      openKeyboardFullscreen: this.openKeyboardFullscreen, endKeyboardTalk: this.endKeyboardTalk,
+      onKeyboardDragEnd: this.onKeyboardDragEnd,
+      kbThinking: s.kbThinking,
+      kbPhaseLabel: s.kbThinking ? 'thinking…' : (s.messages.length ? 'here you go' : 'ready when you are'),
+      showKbFollowup: !s.kbThinking && s.messages.length > 0,
+      typePromptStyle: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '28px 40px', borderRadius: 24, background: 'rgba(43,35,32,0.04)', cursor: 'pointer', width: '100%', boxSizing: 'border-box' },
+      typePromptIconStyle: {
+        width: 64, height: 64, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 27, background: accent, boxShadow: `0 12px 26px -12px ${accent}aa`,
+      },
+      typePromptTextStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 16, fontWeight: 600, color: '#2B2320' },
+
+      showHistory: s.showHistory, showSettings: s.showSettings,
+      showProfile: s.showProfile, openProfile: this.openProfile, closeProfile: this.closeProfile,
+      profile: this.profileData,
+      profileFields: this.profileFields.map((f) => ({
+        ...f,
+        rowStyle: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderBottom: f.last ? 'none' : '1px solid rgba(43,35,32,0.08)' },
+        iconWrapStyle: { width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, background: accentSoft, flexShrink: 0 },
+        labelStyle: { fontFamily: 'Inter,sans-serif', fontSize: 11.5, fontWeight: 600, letterSpacing: '0.03em', color: 'rgba(43,35,32,0.45)', marginBottom: 2 },
+        valueStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 15, fontWeight: 500, color: '#2B2320' },
+      })),
+      profileSettingsLinks: this.profileSettingsDefs.map((l) => ({
+        ...l,
+        onClick: this.openSettings,
+        rowStyle: { display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: l.last ? 'none' : '1px solid rgba(43,35,32,0.08)', cursor: 'pointer' },
+        iconWrapStyle: { width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, background: accentSoft, flexShrink: 0 },
+        labelStyle: { flex: 1, fontFamily: 'Fredoka,sans-serif', fontSize: 15, fontWeight: 500, color: '#2B2320' },
+        chevronStyle: { fontFamily: 'Inter,sans-serif', fontSize: 18, color: 'rgba(43,35,32,0.3)' },
+      })),
+      profileRowStyle: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 16, background: 'rgba(43,35,32,0.03)', cursor: 'pointer', marginBottom: 22 },
+      profileRowAvatarStyle: { width: 42, height: 42, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Fredoka,sans-serif', fontSize: 15, fontWeight: 600, color: '#fff', background: accent, flexShrink: 0 },
+      profileAvatarStyle: { width: 92, height: 92, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Fredoka,sans-serif', fontSize: 30, fontWeight: 600, color: '#fff', background: accent, boxShadow: `0 14px 30px -12px ${accent}aa` },
+      voiceFullscreen: s.voiceFullscreen, endTalk: this.endTalk,
+      onVoiceDragStart: this.onVoiceDragStart, onVoiceDragEnd: this.onVoiceDragEnd,
+      voiceDragHandleStyle: { width: 36, height: 4, borderRadius: 2, background: 'rgba(43,35,32,0.18)', margin: '2px auto 0', cursor: 'grab' },
+      stopPropagation: this.stopPropagation,
+
+      pipHeaderBtnStyle: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '4px 8px', borderRadius: 12 },
+      pipHeaderDotStyle: { width: 8, height: 8, borderRadius: '50%', background: accent },
+      openPipPopup: this.openPipPopup, closePipPopup: this.closePipPopup,
+      showPipOverlay: s.showPipPopup, pipClosing: s.pipClosing,
+      pipBackdropStyle: {
+        position: 'absolute', inset: 0, zIndex: 210, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: 'rgba(43,35,32,0.32)', animation: (s.pipClosing ? 'backdropOut' : 'backdropIn') + ' 0.22s ease-out forwards',
+      },
+      pipCardStyle: {
+        width: '100%', boxSizing: 'border-box', background: '#FFFCF8', borderRadius: '28px 28px 0 0',
+        padding: '10px 22px 30px', position: 'relative',
+        animation: (s.pipClosing ? 'popupSlideDown' : 'popupSlideUp') + ' 0.24s ease-out forwards',
+      },
+
+      openCategoryPopup: this.openCategoryPopup, closeCategoryPopup: this.closeCategoryPopup,
+      showCategoryOverlay: s.showCategoryPopup, categoryClosing: s.categoryClosing,
+      categoryBackdropStyle: {
+        position: 'absolute', inset: 0, zIndex: 210, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: 'rgba(43,35,32,0.32)', animation: (s.categoryClosing ? 'backdropOut' : 'backdropIn') + ' 0.22s ease-out forwards',
+      },
+      categoryCardStyle: {
+        width: '100%', boxSizing: 'border-box', background: '#FFFCF8', borderRadius: '28px 28px 0 0',
+        padding: '10px 22px 30px', maxHeight: '72%', overflow: 'auto', position: 'relative',
+        animation: (s.categoryClosing ? 'popupSlideDown' : 'popupSlideUp') + ' 0.24s ease-out forwards',
+      },
+      categoryGridStyle: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 },
+      popupHandleStyle: { width: 36, height: 4, borderRadius: 2, background: 'rgba(43,35,32,0.15)', margin: '2px auto 14px' },
+      popupCloseBtnStyle: { position: 'absolute', top: 10, right: 16, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'rgba(43,35,32,0.06)', fontSize: 13, cursor: 'pointer', color: '#2B2320' },
+      voiceOverlayStyle: { position: 'absolute', top: -58, left: 0, right: 0, bottom: 0, background: '#FFFCF8', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingTop: 46, zIndex: 200, animation: (s.voiceClosing ? 'voiceFadeOut' : 'voiceFadeIn') + ' 0.26s ease-out forwards' },
+      voiceCloseBtnStyle: { position: 'absolute', top: 76, right: 18, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(43,35,32,0.06)', fontSize: 15, cursor: 'pointer', color: '#2B2320', zIndex: 5 },
+      voiceOverlayLabelStyle: { textAlign: 'center', marginTop: 6, marginBottom: 4 },
+      keyboardOverlayStyle: { position: 'absolute', top: -58, left: 0, right: 0, bottom: 0, background: '#FFFCF8', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingTop: 46, zIndex: 200, animation: (s.keyboardClosing ? 'voiceFadeOut' : 'voiceFadeIn') + ' 0.26s ease-out forwards' },
+      endTalkBtnStyle: { fontFamily: 'Fredoka,sans-serif', fontSize: 15, fontWeight: 600, color: '#D64545', background: 'rgba(214,69,69,0.08)', border: 'none', borderRadius: 16, padding: '14px', cursor: 'pointer', margin: '0 24px 32px' },
+      openHistory: this.openHistory, closeHistory: this.closeHistory,
+      openSettings: this.openSettings, closeSettings: this.closeSettings,
+
+      overlayLeftStyle: { position: 'absolute', inset: 0, background: '#FFFCF8', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingTop: 58, animation: 'slideInLeft 0.28s ease-out', zIndex: 30 },
+      overlayRightStyle: { position: 'absolute', inset: 0, background: '#FFFCF8', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingTop: 58, animation: 'slideInRight 0.28s ease-out', zIndex: 30 },
+      overlayHeaderStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 18px 12px' },
+      searchInputStyle: { margin: '0 18px 10px', fontFamily: 'Inter,sans-serif', fontSize: 14, padding: '10px 16px', borderRadius: 12, border: 'none', background: 'rgba(43,35,32,0.06)', color: '#2B2320', outline: 'none' },
+      historyFilterRowStyle: { display: 'flex', gap: 8, overflowX: 'auto', padding: '0 18px 12px' },
+      historyCategoryChips,
+      historySearchText: s.historySearchText, onHistorySearchChange: this.onHistorySearchChange,
+      historyGroupLabelStyle: { fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(43,35,32,0.4)', padding: '14px 18px 6px' },
+      historyRowStyle: { padding: '10px 18px', cursor: 'pointer' },
+      filteredHistoryToday, filteredHistoryYesterday,
+      hasFilteredToday: filteredHistoryToday.length > 0,
+      hasFilteredYesterday: filteredHistoryYesterday.length > 0,
+      noFilteredResults: filteredHistoryToday.length === 0 && filteredHistoryYesterday.length === 0,
+
+      sectionLabelStyle: { fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(43,35,32,0.4)', margin: '4px 0 10px' },
+      settingsHeroBlobStyle: { position: 'relative', width: 84, height: 84, borderRadius: '44% 56% 60% 40% / 48% 42% 58% 52%', background: `linear-gradient(135deg, ${buddy.from}, ${buddy.to})` },
+      tagline: this.taglineMap[s.personality],
+      personalities,
+      settingsCardStyle: { background: 'rgba(43,35,32,0.03)', borderRadius: 18, padding: '2px 16px', marginBottom: 18 },
+      toggleRowStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid rgba(43,35,32,0.08)' },
+      toggleRowStyleLast: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0' },
+      voiceReplyTrack: trackStyle(s.voiceReplies), voiceReplyKnob: knobStyle(s.voiceReplies), toggleVoiceReplies: this.toggleVoiceReplies,
+      animatedReactionsTrack: trackStyle(s.animatedReactions), animatedReactionsKnob: knobStyle(s.animatedReactions), toggleAnimatedReactions: this.toggleAnimatedReactions,
+      hapticsTrack: trackStyle(s.haptics), hapticsKnob: knobStyle(s.haptics), toggleHaptics: this.toggleHaptics,
+      storeConversationsTrack: trackStyle(s.storeConversations), storeConversationsKnob: knobStyle(s.storeConversations), toggleStoreConversations: this.toggleStoreConversations,
+      sliderCardStyle: { background: 'rgba(43,35,32,0.03)', borderRadius: 18, padding: '16px', marginBottom: 22 },
+      sliderStyle: { flex: 1, accentColor: accent },
+      brandColorRowStyle: { display: 'flex', gap: 12, flexWrap: 'wrap' },
+      brandColorOptions: this.brandColorDefs.map((c) => {
+        const selected = c.hex === s.brandColor;
+        return {
+          ...c,
+          selected,
+          onClick: () => this.setBrandColor(c.hex),
+          wrapStyle: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' },
+          swatchStyle: {
+            width: 34, height: 34, borderRadius: '50%', background: c.hex, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: selected ? `0 0 0 2px #FFFCF8, 0 0 0 4px ${c.hex}` : 'none',
+          },
+          checkStyle: { color: '#fff', fontSize: 15, fontWeight: 700 },
+          labelStyle: { fontFamily: 'Inter,sans-serif', fontSize: 10.5, color: 'rgba(43,35,32,0.55)' },
+        };
+      }),
+      speakingSpeed: s.speakingSpeed, onSpeedChange: this.onSpeedChange,
+      dangerBtnStyle: { width: '100%', fontFamily: 'Inter,sans-serif', fontSize: 14, fontWeight: 500, color: '#D64545', background: 'rgba(214,69,69,0.08)', border: 'none', borderRadius: 14, padding: '13px', cursor: 'pointer', marginTop: 4 },
+      clearHistory: this.clearHistory,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

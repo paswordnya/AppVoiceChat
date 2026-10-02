@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Debug-only override, merged on top of src/main's manifest (AGP source
+      set merging). The dev backend (PRD §4.4) is plain http://, and
+      Android 9+ blocks cleartext traffic by default — release builds keep
+      that default; only local dev builds need this relaxed.
+    -->
+    <application android:usesCleartextTraffic="true" />
+
+    <!-- Pluto's floating notch (MainActivity requests this via
+      ACTION_MANAGE_OVERLAY_PERMISSION at debug-build startup) — the "draw
+      over other apps" special permission a debug build needs so Pluto has
+      an always-visible tap target instead of only a notification. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+</manifest>
